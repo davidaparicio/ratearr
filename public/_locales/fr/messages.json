@@ -47,6 +47,9 @@
   "source_allocine_spectateurs": {
     "message": "Allociné Spectateurs"
   },
+  "popup_audienceFavorite": {
+    "message": "Le public note mieux que la presse sur Allociné"
+  },
   "err_no_key": {
     "message": "Clé API requise"
   },

@@ -62,6 +62,10 @@
     "message": "Allociné Spectateurs",
     "description": "Allociné audience source label"
   },
+  "popup_audienceFavorite": {
+    "message": "Audience rates higher than critics on Allociné",
+    "description": "Shown when Allociné Spectateurs > Presse"
+  },
   "err_no_key": {
     "message": "API key required",
     "description": "When a provider needs a key"

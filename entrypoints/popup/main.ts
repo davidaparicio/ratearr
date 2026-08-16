@@ -182,6 +182,24 @@ function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
 
   app.appendChild(list);
 
+  // Allociné insight: audience > critics
+  const presse = data.results.find(
+    (r) => r.status === 'ok' && r.rating.source === 'allocine-presse',
+  );
+  const spectateurs = data.results.find(
+    (r) => r.status === 'ok' && r.rating.source === 'allocine-spectateurs',
+  );
+  if (
+    presse?.status === 'ok' &&
+    spectateurs?.status === 'ok' &&
+    spectateurs.rating.value > presse.rating.value
+  ) {
+    const insight = document.createElement('div');
+    insight.className = 'insight';
+    insight.textContent = `★ ${t('popup_audienceFavorite')}`;
+    app.appendChild(insight);
+  }
+
   // Refresh button
   const actions = document.createElement('div');
   actions.className = 'actions';

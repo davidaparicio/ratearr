@@ -138,6 +138,15 @@ h1 {
   cursor: pointer;
 }
 
+.insight {
+  font-size: 12px;
+  color: #b58105;
+  background: #fef9ef;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
 .actions {
   display: flex;
   align-items: center;
