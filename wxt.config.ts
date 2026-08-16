@@ -8,10 +8,10 @@ export default defineConfig({
     default_locale: 'en',
     permissions: ['storage', 'activeTab', 'contextMenus'],
     icons: {
-      16: 'icon/icon-16.svg',
-      32: 'icon/icon-32.svg',
-      48: 'icon/icon-48.svg',
-      128: 'icon/icon-128.svg',
+      16: 'icon/icon-16.png',
+      32: 'icon/icon-32.png',
+      48: 'icon/icon-48.png',
+      128: 'icon/icon-128.png',
     },
     host_permissions: [
       'https://api.themoviedb.org/*',
