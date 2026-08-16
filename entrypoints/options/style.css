@@ -1,0 +1,113 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #444;
+}
+
+section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.option-row label {
+  min-width: 160px;
+}
+
+.option-row input[type="number"] {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.key-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.key-row label {
+  min-width: 60px;
+  font-weight: 500;
+}
+
+.key-row input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.key-link {
+  color: #6366f1;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+button {
+  padding: 6px 14px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fafafa;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+}
+
+button:hover {
+  background: #f0f0f0;
+}
+
+.save-btn {
+  margin-top: 12px;
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+  font-weight: 500;
+}
+
+.save-btn:hover {
+  background: #5558e6;
+}
+
+.save-msg {
+  margin-left: 10px;
+  color: #1a7f37;
+  font-size: 13px;
+}

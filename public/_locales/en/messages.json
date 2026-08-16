@@ -1,0 +1,109 @@
+{
+  "extName": {
+    "message": "Ratearr",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Aggregated movie & TV ratings from multiple sources",
+    "description": "Extension description"
+  },
+  "contextMenu_getRating": {
+    "message": "Get movie rating for \"%s\"",
+    "description": "Context menu item shown on text selection"
+  },
+  "popup_noTitle": {
+    "message": "Open a movie or TV page on IMDb, Allociné, or TMDB — or select a title and right-click \"Get movie rating\".",
+    "description": "Shown when no title is detected"
+  },
+  "popup_loading": {
+    "message": "Loading ratings…",
+    "description": "Shown while ratings are being fetched"
+  },
+  "popup_error": {
+    "message": "Could not fetch ratings. Try refreshing.",
+    "description": "Shown on error"
+  },
+  "popup_notFound": {
+    "message": "Title not found on TMDB.",
+    "description": "When resolution fails"
+  },
+  "popup_refresh": {
+    "message": "Refresh",
+    "description": "Refresh button"
+  },
+  "popup_sources": {
+    "message": "$COUNT$ sources",
+    "description": "Number of rating sources used",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "source_tmdb": {
+    "message": "TMDB",
+    "description": "TMDB source label"
+  },
+  "source_imdb": {
+    "message": "IMDb",
+    "description": "IMDb source label"
+  },
+  "source_rottentomatoes": {
+    "message": "Rotten Tomatoes",
+    "description": "Rotten Tomatoes source label"
+  },
+  "source_metacritic": {
+    "message": "Metacritic",
+    "description": "Metacritic source label"
+  },
+  "source_allocine_presse": {
+    "message": "Allociné Presse",
+    "description": "Allociné critics source label"
+  },
+  "source_allocine_spectateurs": {
+    "message": "Allociné Spectateurs",
+    "description": "Allociné audience source label"
+  },
+  "err_no_key": {
+    "message": "API key required",
+    "description": "When a provider needs a key"
+  },
+  "err_not_found": {
+    "message": "Not found",
+    "description": "When a provider can't find the title"
+  },
+  "err_network": {
+    "message": "Network error",
+    "description": "When a fetch fails"
+  },
+  "err_parse": {
+    "message": "Parse error",
+    "description": "When response parsing fails"
+  },
+  "options_title": {
+    "message": "Ratearr Settings",
+    "description": "Options page title"
+  },
+  "options_sources": {
+    "message": "Rating Sources",
+    "description": "Sources section header"
+  },
+  "options_apiKeys": {
+    "message": "API Keys",
+    "description": "API keys section header"
+  },
+  "options_cache": {
+    "message": "Cache",
+    "description": "Cache section header"
+  },
+  "options_cacheTtl": {
+    "message": "Cache duration (hours)",
+    "description": "Cache TTL label"
+  },
+  "options_clearCache": {
+    "message": "Clear Cache",
+    "description": "Clear cache button"
+  },
+  "options_saved": {
+    "message": "Settings saved.",
+    "description": "Confirmation after saving"
+  }
+}

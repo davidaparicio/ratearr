@@ -1,0 +1,83 @@
+{
+  "extName": {
+    "message": "Ratearr"
+  },
+  "extDescription": {
+    "message": "Notes agrégées de films et séries depuis plusieurs sources"
+  },
+  "contextMenu_getRating": {
+    "message": "Obtenir la note du film « %s »"
+  },
+  "popup_noTitle": {
+    "message": "Ouvrez une page de film ou série sur IMDb, Allociné ou TMDB — ou sélectionnez un titre et faites clic droit « Obtenir la note du film »."
+  },
+  "popup_loading": {
+    "message": "Chargement des notes…"
+  },
+  "popup_error": {
+    "message": "Impossible de récupérer les notes. Réessayez."
+  },
+  "popup_notFound": {
+    "message": "Titre introuvable sur TMDB."
+  },
+  "popup_refresh": {
+    "message": "Actualiser"
+  },
+  "popup_sources": {
+    "message": "$COUNT$ sources",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "source_tmdb": {
+    "message": "TMDB"
+  },
+  "source_imdb": {
+    "message": "IMDb"
+  },
+  "source_rottentomatoes": {
+    "message": "Rotten Tomatoes"
+  },
+  "source_metacritic": {
+    "message": "Metacritic"
+  },
+  "source_allocine_presse": {
+    "message": "Allociné Presse"
+  },
+  "source_allocine_spectateurs": {
+    "message": "Allociné Spectateurs"
+  },
+  "err_no_key": {
+    "message": "Clé API requise"
+  },
+  "err_not_found": {
+    "message": "Introuvable"
+  },
+  "err_network": {
+    "message": "Erreur réseau"
+  },
+  "err_parse": {
+    "message": "Erreur d'analyse"
+  },
+  "options_title": {
+    "message": "Paramètres Ratearr"
+  },
+  "options_sources": {
+    "message": "Sources de notes"
+  },
+  "options_apiKeys": {
+    "message": "Clés API"
+  },
+  "options_cache": {
+    "message": "Cache"
+  },
+  "options_cacheTtl": {
+    "message": "Durée du cache (heures)"
+  },
+  "options_clearCache": {
+    "message": "Vider le cache"
+  },
+  "options_saved": {
+    "message": "Paramètres enregistrés."
+  }
+}
