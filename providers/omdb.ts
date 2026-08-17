@@ -122,6 +122,14 @@ export const omdbProvider: RatingProvider = {
     if (!resp.ok) throw new Error(`omdb_http_${resp.status}`);
     const data: OmdbResponse = await resp.json();
 
+    if (typeof data.Response !== 'string') {
+      return this.produces.map((source: SourceId) => ({
+        status: 'unavailable' as const,
+        source,
+        reasonKey: 'err_parse',
+      }));
+    }
+
     return parseOmdbResponse(data, resolved.imdbId);
   },
 };

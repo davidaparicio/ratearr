@@ -12,8 +12,12 @@ export default defineContentScript({
   main() {
     let lastUrl = location.href;
     let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+    let activePoll: ReturnType<typeof setInterval> | undefined;
 
     function detect() {
+      clearInterval(activePoll);
+      activePoll = undefined;
+
       const url = new URL(location.href);
       const detector = getDetector(url.hostname);
       if (!detector || !detector.matches(url)) return;
@@ -26,20 +30,22 @@ export default defineContentScript({
 
       // JSON-LD may mount late on SPAs — poll up to ~3s
       let attempts = 0;
-      const poll = setInterval(() => {
+      activePoll = setInterval(() => {
         attempts++;
         const result = detector.extract(document, url);
         if (result) {
-          clearInterval(poll);
+          clearInterval(activePoll);
+          activePoll = undefined;
           sendDetection(result);
         } else if (attempts >= 10) {
-          clearInterval(poll);
+          clearInterval(activePoll);
+          activePoll = undefined;
         }
       }, 300);
     }
 
     function sendDetection(query: TitleQuery) {
-      browser.runtime.sendMessage({ kind: 'title-detected', query });
+      browser.runtime.sendMessage({ kind: 'title-detected', query }).catch(() => {});
     }
 
     function onLocationChange() {

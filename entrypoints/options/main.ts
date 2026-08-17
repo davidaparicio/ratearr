@@ -89,7 +89,7 @@ async function init() {
   saveBtn.addEventListener('click', async () => {
     const newSettings: Partial<Settings> = {
       enabledSources: { ...DEFAULT_SETTINGS.enabledSources },
-      cacheTtlHours: parseInt(ttlInput.value, 10) || 24,
+      cacheTtlHours: Math.min(168, Math.max(1, parseInt(ttlInput.value, 10) || 24)),
     };
 
     const checkboxes = app.querySelectorAll<HTMLInputElement>('input[data-source]');
@@ -130,7 +130,7 @@ function createKeyInput(label: string, value: string, id: string, signupUrl: str
   row.appendChild(labelEl);
 
   const input = document.createElement('input');
-  input.type = 'text';
+  input.type = 'password';
   input.id = id;
   input.value = value;
   input.placeholder = 'Enter API key';

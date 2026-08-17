@@ -73,8 +73,18 @@ function renderLoading(app: HTMLElement) {
 
 function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
   app.innerHTML = '';
+  app.appendChild(renderHeader(data));
+  const agg = renderAggregate(data);
+  if (agg) app.appendChild(agg);
+  app.appendChild(renderRatingsList(data));
+  const insight = renderInsight(data);
+  if (insight) app.appendChild(insight);
+  const alts = renderAlternatives(data, tabId, app);
+  if (alts) app.appendChild(alts);
+  app.appendChild(renderActions(data, tabId, app));
+}
 
-  // Header with title + poster
+function renderHeader(data: RatingsPanelData): HTMLElement {
   const header = document.createElement('div');
   header.className = 'panel-header';
 
@@ -100,24 +110,25 @@ function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
     titleBlock.appendChild(yearEl);
   }
   header.appendChild(titleBlock);
-  app.appendChild(header);
+  return header;
+}
 
-  // Aggregate score
-  if (data.aggregate) {
-    const aggRow = document.createElement('div');
-    aggRow.className = 'aggregate';
-    const scoreEl = document.createElement('span');
-    scoreEl.className = 'agg-score';
-    scoreEl.textContent = data.aggregate.value.toFixed(1);
-    aggRow.appendChild(scoreEl);
-    const metaEl = document.createElement('span');
-    metaEl.className = 'agg-meta';
-    metaEl.textContent = ` / 10 · ${t('popup_sources', String(data.aggregate.sourcesUsed))}`;
-    aggRow.appendChild(metaEl);
-    app.appendChild(aggRow);
-  }
+function renderAggregate(data: RatingsPanelData): HTMLElement | null {
+  if (!data.aggregate) return null;
+  const aggRow = document.createElement('div');
+  aggRow.className = 'aggregate';
+  const scoreEl = document.createElement('span');
+  scoreEl.className = 'agg-score';
+  scoreEl.textContent = data.aggregate.value.toFixed(1);
+  aggRow.appendChild(scoreEl);
+  const metaEl = document.createElement('span');
+  metaEl.className = 'agg-meta';
+  metaEl.textContent = ` / 10 · ${t('popup_sources', String(data.aggregate.sourcesUsed))}`;
+  aggRow.appendChild(metaEl);
+  return aggRow;
+}
 
-  // Ratings list
+function renderRatingsList(data: RatingsPanelData): HTMLElement {
   const list = document.createElement('div');
   list.className = 'ratings-list';
 
@@ -180,9 +191,10 @@ function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
     list.appendChild(row);
   }
 
-  app.appendChild(list);
+  return list;
+}
 
-  // Allociné insight: audience > critics
+function renderInsight(data: RatingsPanelData): HTMLElement | null {
   const presse = data.results.find(
     (r) => r.status === 'ok' && r.rating.source === 'allocine-presse',
   );
@@ -194,57 +206,60 @@ function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
     spectateurs?.status === 'ok' &&
     spectateurs.rating.value > presse.rating.value
   ) {
-    const insight = document.createElement('div');
-    insight.className = 'insight';
-    insight.textContent = `★ ${t('popup_audienceFavorite')}`;
-    app.appendChild(insight);
+    const el = document.createElement('div');
+    el.className = 'insight';
+    el.textContent = `★ ${t('popup_audienceFavorite')}`;
+    return el;
   }
+  return null;
+}
 
-  // "Did you mean?" alternatives
-  if (data.alternatives && data.alternatives.length > 0) {
-    const altSection = document.createElement('div');
-    altSection.className = 'alternatives';
-    const altHeader = document.createElement('div');
-    altHeader.className = 'alt-header';
-    altHeader.textContent = t('popup_didYouMean');
-    altSection.appendChild(altHeader);
+function renderAlternatives(data: RatingsPanelData, tabId: number, app: HTMLElement): HTMLElement | null {
+  if (!data.alternatives || data.alternatives.length === 0) return null;
 
-    for (const alt of data.alternatives) {
-      const altRow = document.createElement('button');
-      altRow.className = 'alt-row';
-      altRow.addEventListener('click', () => {
-        browser.runtime.sendMessage({
-          kind: 'select-alternative',
-          tabId,
-          tmdbId: alt.tmdbId,
-          mediaType: alt.mediaType,
-        } as Msg);
-        renderLoading(app);
-        setTimeout(() => init(), 1500);
-      });
+  const section = document.createElement('div');
+  section.className = 'alternatives';
+  const header = document.createElement('div');
+  header.className = 'alt-header';
+  header.textContent = t('popup_didYouMean');
+  section.appendChild(header);
 
-      if (alt.posterPath) {
-        const thumb = document.createElement('img');
-        thumb.src = `${TMDB_IMG_BASE}${alt.posterPath}`;
-        thumb.className = 'alt-poster';
-        thumb.width = 24;
-        thumb.height = 36;
-        altRow.appendChild(thumb);
-      }
+  for (const alt of data.alternatives) {
+    const row = document.createElement('button');
+    row.className = 'alt-row';
+    row.addEventListener('click', () => {
+      browser.runtime.sendMessage({
+        kind: 'select-alternative',
+        tabId,
+        tmdbId: alt.tmdbId,
+        mediaType: alt.mediaType,
+      } as Msg);
+      renderLoading(app);
+      setTimeout(() => init(), 1500);
+    });
 
-      const altInfo = document.createElement('span');
-      altInfo.className = 'alt-info';
-      const titleText = alt.title + (alt.year ? ` (${alt.year})` : '');
-      altInfo.textContent = titleText;
-      altRow.appendChild(altInfo);
-
-      altSection.appendChild(altRow);
+    if (alt.posterPath) {
+      const thumb = document.createElement('img');
+      thumb.src = `${TMDB_IMG_BASE}${alt.posterPath}`;
+      thumb.alt = alt.title;
+      thumb.className = 'alt-poster';
+      thumb.width = 24;
+      thumb.height = 36;
+      row.appendChild(thumb);
     }
 
-    app.appendChild(altSection);
+    const info = document.createElement('span');
+    info.className = 'alt-info';
+    info.textContent = alt.title + (alt.year ? ` (${alt.year})` : '');
+    row.appendChild(info);
+
+    section.appendChild(row);
   }
 
-  // Refresh button
+  return section;
+}
+
+function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement): HTMLElement {
   const actions = document.createElement('div');
   actions.className = 'actions';
   const refreshBtn = document.createElement('button');
@@ -264,7 +279,7 @@ function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
     actions.appendChild(cacheNote);
   }
 
-  app.appendChild(actions);
+  return actions;
 }
 
 function formatCount(n: number): string {

@@ -20,3 +20,26 @@ export function titleSimilarity(a: string, b: string): number {
   if (na.includes(nb) || nb.includes(na)) return 0.8;
   return 0;
 }
+
+export function rankByTitleMatch<T>(
+  items: T[],
+  query: string,
+  queryYear: number | undefined,
+  getTitle: (item: T) => string,
+  getAltTitle: (item: T) => string,
+  getYear: (item: T) => number | undefined,
+): { item: T; score: number; yearMatch: boolean }[] {
+  return items
+    .map((item) => ({
+      item,
+      score: Math.max(
+        titleSimilarity(query, getTitle(item)),
+        titleSimilarity(query, getAltTitle(item)),
+      ),
+      yearMatch: queryYear != null ? getYear(item) === queryYear : false,
+    }))
+    .sort((a, b) => {
+      if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;
+      return b.score - a.score;
+    });
+}

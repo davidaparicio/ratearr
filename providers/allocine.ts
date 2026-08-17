@@ -1,6 +1,6 @@
 import type { RatingProvider } from './types';
 import type { ResolvedTitle, RatingResult } from '../utils/types';
-import { normalizeTitle, titleSimilarity } from '../utils/normalize';
+import { rankByTitleMatch } from '../utils/normalize';
 
 const ALLOCINE_BASE = 'https://www.allocine.fr';
 const AUTOCOMPLETE_URL = `${ALLOCINE_BASE}/_/autocomplete/movie`;
@@ -60,21 +60,19 @@ async function searchAllocine(title: string, year?: number): Promise<string | nu
   const movies = results.filter((r) => r.entity_type === 'movie');
   if (movies.length === 0) return null;
 
-  const ranked = movies
-    .map((r) => ({
-      ...r,
-      score: Math.max(
-        titleSimilarity(title, r.label || ''),
-        titleSimilarity(title, r.original_label || ''),
-      ),
-      yearMatch: year && r.data?.year ? parseInt(r.data.year, 10) === year : false,
-    }))
-    .sort((a, b) => {
-      if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;
-      return b.score - a.score;
-    });
+  const ranked = rankByTitleMatch(
+    movies,
+    title,
+    year,
+    (r) => r.label || '',
+    (r) => r.original_label || '',
+    (r) => r.data?.year ? parseInt(r.data.year, 10) : undefined,
+  );
 
-  return `${ALLOCINE_BASE}/film/fichefilm_gen_cfilm=${ranked[0].entity_id}.html`;
+  const entityId = ranked[0].item.entity_id;
+  if (!/^\d+$/.test(entityId)) return null;
+
+  return `${ALLOCINE_BASE}/film/fichefilm_gen_cfilm=${entityId}.html`;
 }
 
 export const allocineProvider: RatingProvider = {

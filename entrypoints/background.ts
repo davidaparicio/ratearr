@@ -17,6 +17,7 @@ interface TabState {
 }
 
 const tabStates = new Map<number, TabState>();
+const tabGenerations = new Map<number, number>();
 
 function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -29,6 +30,9 @@ function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
 }
 
 async function handleTitleDetected(query: TitleQuery, tabId: number) {
+  const gen = (tabGenerations.get(tabId) ?? 0) + 1;
+  tabGenerations.set(tabId, gen);
+
   tabStates.set(tabId, { state: 'loading', data: null });
   updateBadge(tabId, undefined);
 
@@ -49,10 +53,13 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
     return;
   }
 
+  if (tabGenerations.get(tabId) !== gen) return;
+
   const { resolved, alternatives } = resolution;
 
   const cached = await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
   if (cached) {
+    if (tabGenerations.get(tabId) !== gen) return;
     const panelData = { ...cached, alternatives, fromCache: true };
     tabStates.set(tabId, { state: 'ready', data: panelData });
     updateBadge(tabId, panelData.aggregate);
@@ -70,6 +77,8 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
       return withTimeout(PROVIDER_TIMEOUT_MS, p.fetchRatings(resolved, settings));
     }),
   );
+
+  if (tabGenerations.get(tabId) !== gen) return;
 
   for (let i = 0; i < settled.length; i++) {
     const outcome = settled[i];
@@ -126,21 +135,25 @@ export default defineBackground(() => {
       ids: {},
       sourceSite: 'context-menu',
     };
-    handleTitleDetected(query, tab.id);
-    // Open the popup programmatically — MV2 supports openPopup() on user gesture
+    handleTitleDetected(query, tab.id).catch((err) => console.error('Ratearr: pipeline error', err));
     browserAction.openPopup?.();
   });
 
   browser.runtime.onMessage.addListener(
     (message: unknown, sender: browser.Runtime.MessageSender) => {
-      const msg = message as Msg;
+      const msg = message as Record<string, unknown>;
+      if (!msg || typeof msg.kind !== 'string') return undefined;
 
       if (msg.kind === 'title-detected' && sender.tab?.id != null) {
-        handleTitleDetected(msg.query, sender.tab.id);
+        const q = msg.query as Record<string, unknown> | undefined;
+        if (!q || typeof q.title !== 'string' || !q.ids || typeof q.ids !== 'object') return undefined;
+        handleTitleDetected(q as unknown as TitleQuery, sender.tab.id)
+          .catch((err) => console.error('Ratearr: pipeline error', err));
         return undefined;
       }
 
       if (msg.kind === 'get-panel-data') {
+        if (typeof msg.tabId !== 'number') return undefined;
         const tabState = tabStates.get(msg.tabId);
         const response: Msg = {
           kind: 'panel-data',
@@ -151,22 +164,24 @@ export default defineBackground(() => {
       }
 
       if (msg.kind === 'select-alternative') {
+        if (typeof msg.tabId !== 'number' || typeof msg.tmdbId !== 'number') return undefined;
         tabStates.set(msg.tabId, { state: 'loading', data: null });
         const query: TitleQuery = {
           title: '',
           ids: { tmdb: msg.tmdbId },
-          mediaType: msg.mediaType,
+          mediaType: (msg.mediaType as TitleQuery['mediaType']) ?? 'movie',
           sourceSite: 'alternative',
         };
-        handleTitleDetected(query, msg.tabId);
+        handleTitleDetected(query, msg.tabId)
+          .catch((err) => console.error('Ratearr: pipeline error', err));
         return undefined;
       }
 
-      if (msg.kind === 'refresh' && msg.tabId) {
+      if (msg.kind === 'refresh') {
+        if (typeof msg.tabId !== 'number') return undefined;
         const tabState = tabStates.get(msg.tabId);
         if (tabState?.data?.resolved) {
           tabStates.set(msg.tabId, { state: 'loading', data: null });
-          // Re-run the pipeline with a synthetic query from the resolved title
           const query: TitleQuery = {
             title: tabState.data.resolved.title,
             year: tabState.data.resolved.year,
@@ -177,7 +192,8 @@ export default defineBackground(() => {
             },
             sourceSite: 'refresh',
           };
-          handleTitleDetected(query, msg.tabId);
+          handleTitleDetected(query, msg.tabId)
+            .catch((err) => console.error('Ratearr: pipeline error', err));
         }
         return undefined;
       }
@@ -188,5 +204,6 @@ export default defineBackground(() => {
 
   browser.tabs.onRemoved.addListener((tabId) => {
     tabStates.delete(tabId);
+    tabGenerations.delete(tabId);
   });
 });

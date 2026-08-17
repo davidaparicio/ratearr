@@ -3,6 +3,8 @@ import type { CacheEntry, MediaType, RatingsPanelData } from './types';
 const MAX_ENTRIES = 300;
 const PRUNE_COUNT = 50;
 
+let indexLock: Promise<void> = Promise.resolve();
+
 function cacheKey(mediaType: MediaType, tmdbId: number): string {
   return `cache:v1:${mediaType}:tmdb:${tmdbId}`;
 }
@@ -33,6 +35,12 @@ export async function getCached(
   const ageMs = Date.now() - entry.fetchedAt;
   if (ageMs > ttlHours * 60 * 60 * 1000) {
     await browser.storage.local.remove(key);
+    indexLock = indexLock.then(async () => {
+      const index = await getIndex();
+      index.entries = index.entries.filter((e) => e.key !== key);
+      await setIndex(index);
+    });
+    await indexLock;
     return null;
   }
 
@@ -48,17 +56,20 @@ export async function putCached(
   const entry: CacheEntry = { v: 1, fetchedAt: Date.now(), data };
   await browser.storage.local.set({ [key]: entry });
 
-  const index = await getIndex();
-  index.entries = index.entries.filter((e) => e.key !== key);
-  index.entries.push({ key, fetchedAt: entry.fetchedAt });
+  indexLock = indexLock.then(async () => {
+    const index = await getIndex();
+    index.entries = index.entries.filter((e) => e.key !== key);
+    index.entries.push({ key, fetchedAt: entry.fetchedAt });
 
-  if (index.entries.length > MAX_ENTRIES) {
-    index.entries.sort((a, b) => a.fetchedAt - b.fetchedAt);
-    const toRemove = index.entries.splice(0, PRUNE_COUNT);
-    await browser.storage.local.remove(toRemove.map((e) => e.key));
-  }
+    if (index.entries.length > MAX_ENTRIES) {
+      index.entries.sort((a, b) => a.fetchedAt - b.fetchedAt);
+      const toRemove = index.entries.splice(0, PRUNE_COUNT);
+      await browser.storage.local.remove(toRemove.map((e) => e.key));
+    }
 
-  await setIndex(index);
+    await setIndex(index);
+  });
+  await indexLock;
 }
 
 export async function clearCache(): Promise<void> {
