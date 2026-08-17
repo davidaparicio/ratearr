@@ -34,24 +34,26 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
 
   const settings = await getSettings();
 
-  let resolved;
+  let resolution;
   try {
-    resolved = await resolveTitle(query, settings);
+    resolution = await resolveTitle(query, settings);
   } catch (err) {
     console.warn('Ratearr: resolution failed', err);
     tabStates.set(tabId, { state: 'no-title', data: null });
     updateBadge(tabId, undefined);
     return;
   }
-  if (!resolved) {
+  if (!resolution) {
     tabStates.set(tabId, { state: 'no-title', data: null });
     updateBadge(tabId, undefined);
     return;
   }
 
+  const { resolved, alternatives } = resolution;
+
   const cached = await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
   if (cached) {
-    const panelData = { ...cached, fromCache: true };
+    const panelData = { ...cached, alternatives, fromCache: true };
     tabStates.set(tabId, { state: 'ready', data: panelData });
     updateBadge(tabId, panelData.aggregate);
     return;
@@ -84,6 +86,7 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
     resolved,
     results: allResults,
     aggregate: agg,
+    alternatives,
     fetchedAt: Date.now(),
     fromCache: false,
   };
@@ -145,6 +148,18 @@ export default defineBackground(() => {
           state: tabState?.state ?? 'idle',
         };
         return Promise.resolve(response);
+      }
+
+      if (msg.kind === 'select-alternative') {
+        tabStates.set(msg.tabId, { state: 'loading', data: null });
+        const query: TitleQuery = {
+          title: '',
+          ids: { tmdb: msg.tmdbId },
+          mediaType: msg.mediaType,
+          sourceSite: 'alternative',
+        };
+        handleTitleDetected(query, msg.tabId);
+        return undefined;
       }
 
       if (msg.kind === 'refresh' && msg.tabId) {

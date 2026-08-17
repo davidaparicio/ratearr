@@ -62,6 +62,10 @@
     "message": "Allociné Spectateurs",
     "description": "Allociné audience source label"
   },
+  "popup_didYouMean": {
+    "message": "Did you mean?",
+    "description": "Header for alternative title suggestions"
+  },
   "popup_audienceFavorite": {
     "message": "Audience rates higher than critics on Allociné",
     "description": "Shown when Allociné Spectateurs > Presse"

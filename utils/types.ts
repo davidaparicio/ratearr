@@ -48,10 +48,20 @@ export interface ResolvedTitle {
   posterPath?: string;
 }
 
+export interface TitleCandidate {
+  tmdbId: number;
+  mediaType: MediaType;
+  title: string;
+  originalTitle?: string;
+  year?: number;
+  posterPath?: string;
+}
+
 export interface RatingsPanelData {
   resolved: ResolvedTitle;
   results: RatingResult[];
   aggregate?: { value: number; scale: 10; sourcesUsed: number };
+  alternatives?: TitleCandidate[];
   fetchedAt: number;
   fromCache: boolean;
 }

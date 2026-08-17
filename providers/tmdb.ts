@@ -1,5 +1,5 @@
 import type { RatingProvider } from './types';
-import type { TitleQuery, ResolvedTitle, RatingResult } from '../utils/types';
+import type { TitleQuery, ResolvedTitle, RatingResult, TitleCandidate } from '../utils/types';
 import type { Settings } from '../utils/settings';
 import { normalizeTitle, titleSimilarity } from '../utils/normalize';
 
@@ -22,19 +22,27 @@ async function tmdbFetch(path: string, params: Record<string, string>, settings:
   return resp.json();
 }
 
-export async function resolveTitle(query: TitleQuery, settings: Settings): Promise<ResolvedTitle | null> {
+export interface ResolutionResult {
+  resolved: ResolvedTitle;
+  alternatives: TitleCandidate[];
+}
+
+export async function resolveTitle(query: TitleQuery, settings: Settings): Promise<ResolutionResult | null> {
   if (query.ids.tmdb) {
     const mediaType = query.mediaType ?? 'movie';
     const data = await tmdbFetch(`/${mediaType}/${query.ids.tmdb}`, { language: 'en-US' }, settings);
     const extIds = await tmdbFetch(`/${mediaType}/${query.ids.tmdb}/external_ids`, {}, settings);
     return {
-      tmdbId: query.ids.tmdb,
-      imdbId: extIds.imdb_id || undefined,
-      mediaType,
-      title: data.title || data.name || query.title,
-      localizedTitle: data.original_title !== data.title ? data.original_title : undefined,
-      year: parseYear(data.release_date || data.first_air_date),
-      posterPath: data.poster_path || undefined,
+      resolved: {
+        tmdbId: query.ids.tmdb,
+        imdbId: extIds.imdb_id || undefined,
+        mediaType,
+        title: data.title || data.name || query.title,
+        localizedTitle: data.original_title !== data.title ? data.original_title : undefined,
+        year: parseYear(data.release_date || data.first_air_date),
+        posterPath: data.poster_path || undefined,
+      },
+      alternatives: [],
     };
   }
 
@@ -46,24 +54,40 @@ export async function resolveTitle(query: TitleQuery, settings: Settings): Promi
     if (!result) return null;
     const mediaType = movie ? 'movie' as const : 'tv' as const;
     return {
-      tmdbId: result.id,
-      imdbId: query.ids.imdb,
-      mediaType,
-      title: result.title || result.name,
-      localizedTitle: result.original_title !== result.title ? result.original_title : undefined,
-      year: parseYear(result.release_date || result.first_air_date),
-      posterPath: result.poster_path || undefined,
+      resolved: {
+        tmdbId: result.id,
+        imdbId: query.ids.imdb,
+        mediaType,
+        title: result.title || result.name,
+        localizedTitle: result.original_title !== result.title ? result.original_title : undefined,
+        year: parseYear(result.release_date || result.first_air_date),
+        posterPath: result.poster_path || undefined,
+      },
+      alternatives: [],
     };
   }
 
   const mediaType = query.mediaType ?? 'movie';
   const endpoint = mediaType === 'tv' ? '/search/tv' : '/search/movie';
-  const params: Record<string, string> = { query: query.title, language: 'en-US' };
-  if (query.year) params.year = String(query.year);
+  const baseParams: Record<string, string> = { query: query.title };
+  if (query.year) baseParams.year = String(query.year);
 
-  const data = await tmdbFetch(endpoint, params, settings);
-  const results = data.results as any[];
-  if (!results || results.length === 0) return null;
+  // Search in both EN and FR to handle French titles (e.g. "L'Agent secret")
+  const [dataEn, dataFr] = await Promise.all([
+    tmdbFetch(endpoint, { ...baseParams, language: 'en-US' }, settings),
+    tmdbFetch(endpoint, { ...baseParams, language: 'fr-FR' }, settings),
+  ]);
+
+  // Merge and deduplicate by TMDB id, preferring EN data
+  const seenIds = new Set<number>();
+  const results: any[] = [];
+  for (const r of [...(dataEn.results || []), ...(dataFr.results || [])]) {
+    if (!seenIds.has(r.id)) {
+      seenIds.add(r.id);
+      results.push(r);
+    }
+  }
+  if (results.length === 0) return null;
 
   const ranked = results
     .map((r: any) => ({
@@ -92,14 +116,28 @@ export async function resolveTitle(query: TitleQuery, settings: Settings): Promi
     // non-critical
   }
 
+  const alternatives: TitleCandidate[] = ranked
+    .slice(1, 4)
+    .map((r) => ({
+      tmdbId: r.item.id,
+      mediaType,
+      title: r.item.title || r.item.name,
+      originalTitle: r.item.original_title || r.item.original_name || undefined,
+      year: parseYear(r.item.release_date || r.item.first_air_date),
+      posterPath: r.item.poster_path || undefined,
+    }));
+
   return {
-    tmdbId: chosen.id,
-    imdbId,
-    mediaType,
-    title: chosen.title || chosen.name,
-    localizedTitle: chosen.original_title !== chosen.title ? chosen.original_title : undefined,
-    year: parseYear(chosen.release_date || chosen.first_air_date),
-    posterPath: chosen.poster_path || undefined,
+    resolved: {
+      tmdbId: chosen.id,
+      imdbId,
+      mediaType,
+      title: chosen.title || chosen.name,
+      localizedTitle: chosen.original_title !== chosen.title ? chosen.original_title : undefined,
+      year: parseYear(chosen.release_date || chosen.first_air_date),
+      posterPath: chosen.poster_path || undefined,
+    },
+    alternatives,
   };
 }
 

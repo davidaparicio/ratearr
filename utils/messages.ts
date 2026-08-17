@@ -1,4 +1,4 @@
-import type { TitleQuery, RatingsPanelData } from './types';
+import type { TitleQuery, RatingsPanelData, MediaType } from './types';
 
 export type PanelState = 'idle' | 'loading' | 'ready' | 'no-title';
 
@@ -6,6 +6,7 @@ export type Msg =
   | { kind: 'title-detected'; query: TitleQuery }
   | { kind: 'get-panel-data'; tabId: number }
   | { kind: 'refresh'; tabId: number }
+  | { kind: 'select-alternative'; tabId: number; tmdbId: number; mediaType: MediaType }
   | { kind: 'panel-data'; data: RatingsPanelData | null; state: PanelState };
 
 export function sendToBackground(msg: Msg): Promise<Msg> {

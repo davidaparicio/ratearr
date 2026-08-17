@@ -1,5 +1,5 @@
 import { applyI18n, t } from '../../utils/i18n';
-import type { RatingsPanelData, RatingResult } from '../../utils/types';
+import type { RatingsPanelData, RatingResult, TitleCandidate } from '../../utils/types';
 import type { Msg, PanelState } from '../../utils/messages';
 
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -198,6 +198,50 @@ function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
     insight.className = 'insight';
     insight.textContent = `★ ${t('popup_audienceFavorite')}`;
     app.appendChild(insight);
+  }
+
+  // "Did you mean?" alternatives
+  if (data.alternatives && data.alternatives.length > 0) {
+    const altSection = document.createElement('div');
+    altSection.className = 'alternatives';
+    const altHeader = document.createElement('div');
+    altHeader.className = 'alt-header';
+    altHeader.textContent = t('popup_didYouMean');
+    altSection.appendChild(altHeader);
+
+    for (const alt of data.alternatives) {
+      const altRow = document.createElement('button');
+      altRow.className = 'alt-row';
+      altRow.addEventListener('click', () => {
+        browser.runtime.sendMessage({
+          kind: 'select-alternative',
+          tabId,
+          tmdbId: alt.tmdbId,
+          mediaType: alt.mediaType,
+        } as Msg);
+        renderLoading(app);
+        setTimeout(() => init(), 1500);
+      });
+
+      if (alt.posterPath) {
+        const thumb = document.createElement('img');
+        thumb.src = `${TMDB_IMG_BASE}${alt.posterPath}`;
+        thumb.className = 'alt-poster';
+        thumb.width = 24;
+        thumb.height = 36;
+        altRow.appendChild(thumb);
+      }
+
+      const altInfo = document.createElement('span');
+      altInfo.className = 'alt-info';
+      const titleText = alt.title + (alt.year ? ` (${alt.year})` : '');
+      altInfo.textContent = titleText;
+      altRow.appendChild(altInfo);
+
+      altSection.appendChild(altRow);
+    }
+
+    app.appendChild(altSection);
   }
 
   // Refresh button
