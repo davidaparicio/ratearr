@@ -19,6 +19,34 @@ interface TabState {
 const tabStates = new Map<number, TabState>();
 const tabGenerations = new Map<number, number>();
 
+async function fetchFromProviders(
+  resolved: ResolvedTitle,
+  settings: Settings,
+): Promise<RatingResult[]> {
+  const providers = getEnabledProviders(settings);
+  const allResults: RatingResult[] = [];
+
+  const settled = await Promise.allSettled(
+    providers.map(async (p) => {
+      if (!p.isConfigured(settings)) {
+        return unavailableResults(p, 'err_no_key');
+      }
+      return withTimeout(PROVIDER_TIMEOUT_MS, p.fetchRatings(resolved, settings));
+    }),
+  );
+
+  for (let i = 0; i < settled.length; i++) {
+    const outcome = settled[i];
+    if (outcome.status === 'fulfilled') {
+      allResults.push(...outcome.value);
+    } else {
+      allResults.push(...unavailableResults(providers[i], 'err_network'));
+    }
+  }
+
+  return allResults;
+}
+
 function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('timeout')), ms);
@@ -66,28 +94,9 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
     return;
   }
 
-  const providers = getEnabledProviders(settings);
-  const allResults: RatingResult[] = [];
-
-  const settled = await Promise.allSettled(
-    providers.map(async (p) => {
-      if (!p.isConfigured(settings)) {
-        return unavailableResults(p, 'err_no_key');
-      }
-      return withTimeout(PROVIDER_TIMEOUT_MS, p.fetchRatings(resolved, settings));
-    }),
-  );
+  const allResults = await fetchFromProviders(resolved, settings);
 
   if (tabGenerations.get(tabId) !== gen) return;
-
-  for (let i = 0; i < settled.length; i++) {
-    const outcome = settled[i];
-    if (outcome.status === 'fulfilled') {
-      allResults.push(...outcome.value);
-    } else {
-      allResults.push(...unavailableResults(providers[i], 'err_network'));
-    }
-  }
 
   const agg = aggregate(allResults);
 
@@ -165,6 +174,7 @@ export default defineBackground(() => {
 
       if (msg.kind === 'select-alternative') {
         if (typeof msg.tabId !== 'number' || typeof msg.tmdbId !== 'number') return undefined;
+        if (msg.mediaType != null && msg.mediaType !== 'movie' && msg.mediaType !== 'tv') return undefined;
         tabStates.set(msg.tabId, { state: 'loading', data: null });
         const query: TitleQuery = {
           title: '',

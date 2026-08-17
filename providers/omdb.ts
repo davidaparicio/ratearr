@@ -1,5 +1,5 @@
 import type { RatingProvider } from './types';
-import type { ResolvedTitle, RatingResult, SourceId } from '../utils/types';
+import type { ResolvedTitle, RatingResult, Rating, SourceId } from '../utils/types';
 import type { Settings } from '../utils/settings';
 
 const OMDB_BASE = 'https://www.omdbapi.com/';
@@ -18,76 +18,57 @@ interface OmdbResponse {
   Error?: string;
 }
 
+interface SourceExtractor {
+  source: SourceId;
+  extract: (data: OmdbResponse) => { value: number; scale: number; count?: number } | null;
+}
+
+const SOURCE_EXTRACTORS: SourceExtractor[] = [
+  {
+    source: 'imdb',
+    extract: (data) => {
+      if (!data.imdbRating || data.imdbRating === 'N/A') return null;
+      const value = parseFloat(data.imdbRating);
+      if (isNaN(value)) return null;
+      return { value, scale: 10, count: parseVoteCount(data.imdbVotes) };
+    },
+  },
+  {
+    source: 'rottentomatoes',
+    extract: (data) => {
+      const entry = data.Ratings?.find((r) => r.Source === 'Rotten Tomatoes');
+      if (!entry) return null;
+      const match = entry.Value.match(/^(\d+)%$/);
+      return match ? { value: parseInt(match[1], 10), scale: 100 } : null;
+    },
+  },
+  {
+    source: 'metacritic',
+    extract: (data) => {
+      const entry = data.Ratings?.find((r) => r.Source === 'Metacritic');
+      if (!entry) return null;
+      const match = entry.Value.match(/^(\d+)\/100$/);
+      return match ? { value: parseInt(match[1], 10), scale: 100 } : null;
+    },
+  },
+];
+
 export function parseOmdbResponse(data: OmdbResponse, imdbId?: string): RatingResult[] {
-  const results: RatingResult[] = [];
-
   if (data.Response === 'False') {
-    return [
-      { status: 'unavailable', source: 'imdb', reasonKey: 'err_not_found' },
-      { status: 'unavailable', source: 'rottentomatoes', reasonKey: 'err_not_found' },
-      { status: 'unavailable', source: 'metacritic', reasonKey: 'err_not_found' },
-    ];
+    return SOURCE_EXTRACTORS.map(({ source }) => ({
+      status: 'unavailable' as const, source, reasonKey: 'err_not_found',
+    }));
   }
 
-  // IMDb rating
-  if (data.imdbRating && data.imdbRating !== 'N/A') {
-    const value = parseFloat(data.imdbRating);
-    if (!isNaN(value)) {
-      results.push({
-        status: 'ok',
-        rating: {
-          source: 'imdb',
-          value,
-          scale: 10,
-          count: parseVoteCount(data.imdbVotes),
-          url: imdbId ? `https://www.imdb.com/title/${imdbId}/` : undefined,
-        },
-      });
+  return SOURCE_EXTRACTORS.map(({ source, extract }) => {
+    const parsed = extract(data);
+    if (parsed) {
+      const rating: Rating = { source, ...parsed };
+      if (source === 'imdb' && imdbId) rating.url = `https://www.imdb.com/title/${imdbId}/`;
+      return { status: 'ok' as const, rating };
     }
-  }
-  if (!results.some((r) => r.status === 'ok' && 'rating' in r && r.rating.source === 'imdb')) {
-    results.push({ status: 'unavailable', source: 'imdb', reasonKey: 'err_not_found' });
-  }
-
-  // Rotten Tomatoes from Ratings array
-  const rtEntry = data.Ratings?.find((r) => r.Source === 'Rotten Tomatoes');
-  if (rtEntry) {
-    const match = rtEntry.Value.match(/^(\d+)%$/);
-    if (match) {
-      results.push({
-        status: 'ok',
-        rating: {
-          source: 'rottentomatoes',
-          value: parseInt(match[1], 10),
-          scale: 100,
-        },
-      });
-    }
-  }
-  if (!results.some((r) => r.status === 'ok' && 'rating' in r && r.rating.source === 'rottentomatoes')) {
-    results.push({ status: 'unavailable', source: 'rottentomatoes', reasonKey: 'err_not_found' });
-  }
-
-  // Metacritic from Ratings array
-  const mcEntry = data.Ratings?.find((r) => r.Source === 'Metacritic');
-  if (mcEntry) {
-    const match = mcEntry.Value.match(/^(\d+)\/100$/);
-    if (match) {
-      results.push({
-        status: 'ok',
-        rating: {
-          source: 'metacritic',
-          value: parseInt(match[1], 10),
-          scale: 100,
-        },
-      });
-    }
-  }
-  if (!results.some((r) => r.status === 'ok' && 'rating' in r && r.rating.source === 'metacritic')) {
-    results.push({ status: 'unavailable', source: 'metacritic', reasonKey: 'err_not_found' });
-  }
-
-  return results;
+    return { status: 'unavailable' as const, source, reasonKey: 'err_not_found' };
+  });
 }
 
 function parseVoteCount(votes?: string): number | undefined {

@@ -21,22 +21,26 @@ export function titleSimilarity(a: string, b: string): number {
   return 0;
 }
 
+export interface TitleAccessors<T> {
+  getTitle: (item: T) => string;
+  getAltTitle: (item: T) => string;
+  getYear: (item: T) => number | undefined;
+}
+
 export function rankByTitleMatch<T>(
   items: T[],
   query: string,
   queryYear: number | undefined,
-  getTitle: (item: T) => string,
-  getAltTitle: (item: T) => string,
-  getYear: (item: T) => number | undefined,
+  accessors: TitleAccessors<T>,
 ): { item: T; score: number; yearMatch: boolean }[] {
   return items
     .map((item) => ({
       item,
       score: Math.max(
-        titleSimilarity(query, getTitle(item)),
-        titleSimilarity(query, getAltTitle(item)),
+        titleSimilarity(query, accessors.getTitle(item)),
+        titleSimilarity(query, accessors.getAltTitle(item)),
       ),
-      yearMatch: queryYear != null ? getYear(item) === queryYear : false,
+      yearMatch: queryYear != null ? accessors.getYear(item) === queryYear : false,
     }))
     .sort((a, b) => {
       if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;

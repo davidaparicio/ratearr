@@ -79,13 +79,11 @@ async function resolveByImdbId(query: TitleQuery, settings: Settings): Promise<R
   };
 }
 
-async function resolveByTitleSearch(query: TitleQuery, settings: Settings): Promise<ResolutionResult | null> {
-  const mediaType = query.mediaType ?? 'movie';
-  validateMediaType(mediaType);
-  const endpoint = mediaType === 'tv' ? '/search/tv' : '/search/movie';
-  const baseParams: Record<string, string> = { query: query.title };
-  if (query.year) baseParams.year = String(query.year);
-
+async function fetchBilingualResults(
+  endpoint: string,
+  baseParams: Record<string, string>,
+  settings: Settings,
+): Promise<any[]> {
   const [dataEn, dataFr] = await Promise.all([
     tmdbFetch(endpoint, { ...baseParams, language: 'en-US' }, settings),
     tmdbFetch(endpoint, { ...baseParams, language: 'fr-FR' }, settings),
@@ -101,15 +99,28 @@ async function resolveByTitleSearch(query: TitleQuery, settings: Settings): Prom
       results.push(r);
     }
   }
+  return results;
+}
+
+async function resolveByTitleSearch(query: TitleQuery, settings: Settings): Promise<ResolutionResult | null> {
+  const mediaType = query.mediaType ?? 'movie';
+  validateMediaType(mediaType);
+  const endpoint = mediaType === 'tv' ? '/search/tv' : '/search/movie';
+  const baseParams: Record<string, string> = { query: query.title };
+  if (query.year) baseParams.year = String(query.year);
+
+  const results = await fetchBilingualResults(endpoint, baseParams, settings);
   if (results.length === 0) return null;
 
   const ranked = rankByTitleMatch(
     results,
     query.title,
     query.year,
-    (r) => r.title || r.name || '',
-    (r) => r.original_title || r.original_name || '',
-    (r) => parseYear(r.release_date || r.first_air_date),
+    {
+      getTitle: (r) => r.title || r.name || '',
+      getAltTitle: (r) => r.original_title || r.original_name || '',
+      getYear: (r) => parseYear(r.release_date || r.first_air_date),
+    },
   ).sort((a, b) => {
     if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;
     if (a.score !== b.score) return b.score - a.score;

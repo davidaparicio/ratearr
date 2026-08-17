@@ -131,67 +131,77 @@ function renderAggregate(data: RatingsPanelData): HTMLElement | null {
 function renderRatingsList(data: RatingsPanelData): HTMLElement {
   const list = document.createElement('div');
   list.className = 'ratings-list';
-
   for (const result of data.results) {
-    const row = document.createElement('div');
-    row.className = 'rating-row';
+    list.appendChild(
+      result.status === 'ok'
+        ? renderOkRatingRow(result)
+        : renderUnavailableRatingRow(result),
+    );
+  }
+  return list;
+}
 
-    if (result.status === 'ok') {
-      const label = document.createElement('span');
-      label.className = 'source-label';
-      label.textContent = t(SOURCE_LABELS[result.rating.source] || result.rating.source);
-      row.appendChild(label);
+function renderOkRatingRow(result: Extract<RatingResult, { status: 'ok' }>): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'rating-row';
 
-      const value = document.createElement('span');
-      value.className = 'rating-value';
-      value.textContent = `${result.rating.value} / ${result.rating.scale}`;
-      row.appendChild(value);
+  const label = document.createElement('span');
+  label.className = 'source-label';
+  label.textContent = t(SOURCE_LABELS[result.rating.source] || result.rating.source);
+  row.appendChild(label);
 
-      if (result.rating.count != null) {
-        const count = document.createElement('span');
-        count.className = 'rating-count';
-        count.textContent = `(${formatCount(result.rating.count)})`;
-        row.appendChild(count);
-      }
+  const value = document.createElement('span');
+  value.className = 'rating-value';
+  value.textContent = `${result.rating.value} / ${result.rating.scale}`;
+  row.appendChild(value);
 
-      if (result.rating.url) {
-        const link = document.createElement('a');
-        link.href = result.rating.url;
-        link.target = '_blank';
-        link.rel = 'noopener';
-        link.className = 'source-link';
-        link.textContent = '↗';
-        row.appendChild(link);
-      }
-    } else {
-      row.classList.add('unavailable');
-      const label = document.createElement('span');
-      label.className = 'source-label';
-      label.textContent = t(SOURCE_LABELS[result.source] || result.source);
-      row.appendChild(label);
-
-      const reason = document.createElement('span');
-      reason.className = 'rating-reason';
-      reason.textContent = t(result.reasonKey);
-      row.appendChild(reason);
-
-      if (result.reasonKey === 'err_no_key') {
-        const link = document.createElement('a');
-        link.href = '#';
-        link.className = 'options-link';
-        link.textContent = '⚙';
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          browser.runtime.openOptionsPage();
-        });
-        row.appendChild(link);
-      }
-    }
-
-    list.appendChild(row);
+  if (result.rating.count != null) {
+    const count = document.createElement('span');
+    count.className = 'rating-count';
+    count.textContent = `(${formatCount(result.rating.count)})`;
+    row.appendChild(count);
   }
 
-  return list;
+  if (result.rating.url) {
+    const link = document.createElement('a');
+    link.href = result.rating.url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.className = 'source-link';
+    link.textContent = '↗';
+    row.appendChild(link);
+  }
+
+  return row;
+}
+
+function renderUnavailableRatingRow(result: Extract<RatingResult, { status: 'unavailable' }>): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'rating-row unavailable';
+
+  const label = document.createElement('span');
+  label.className = 'source-label';
+  label.textContent = t(SOURCE_LABELS[result.source] || result.source);
+  row.appendChild(label);
+
+  const reason = document.createElement('span');
+  reason.className = 'rating-reason';
+  reason.textContent = t(result.reasonKey);
+  row.appendChild(reason);
+
+  if (result.reasonKey === 'err_no_key') {
+    const link = document.createElement('a');
+    link.href = '#';
+    link.className = 'options-link';
+    link.textContent = '⚙';
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      browser.runtime.openOptionsPage();
+    });
+    row.appendChild(link);
+  }
+
+  return row;
 }
 
 function renderInsight(data: RatingsPanelData): HTMLElement | null {

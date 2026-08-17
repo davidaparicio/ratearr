@@ -39,7 +39,7 @@ export async function getCached(
       const index = await getIndex();
       index.entries = index.entries.filter((e) => e.key !== key);
       await setIndex(index);
-    });
+    }).catch((err) => console.warn('Ratearr: index update failed', err));
     await indexLock;
     return null;
   }
@@ -68,13 +68,16 @@ export async function putCached(
     }
 
     await setIndex(index);
-  });
+  }).catch((err) => console.warn('Ratearr: index update failed', err));
   await indexLock;
 }
 
 export async function clearCache(): Promise<void> {
-  const index = await getIndex();
-  const keys = index.entries.map((e) => e.key);
-  if (keys.length > 0) await browser.storage.local.remove(keys);
-  await browser.storage.local.remove('cache:index');
+  indexLock = indexLock.then(async () => {
+    const index = await getIndex();
+    const keys = index.entries.map((e) => e.key);
+    if (keys.length > 0) await browser.storage.local.remove(keys);
+    await browser.storage.local.remove('cache:index');
+  }).catch((err) => console.warn('Ratearr: cache clear failed', err));
+  await indexLock;
 }

@@ -64,9 +64,11 @@ async function searchAllocine(title: string, year?: number): Promise<string | nu
     movies,
     title,
     year,
-    (r) => r.label || '',
-    (r) => r.original_label || '',
-    (r) => r.data?.year ? parseInt(r.data.year, 10) : undefined,
+    {
+      getTitle: (r) => r.label || '',
+      getAltTitle: (r) => r.original_label || '',
+      getYear: (r) => r.data?.year ? parseInt(r.data.year, 10) : undefined,
+    },
   );
 
   const entityId = ranked[0].item.entity_id;
