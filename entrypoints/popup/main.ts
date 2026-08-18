@@ -4,6 +4,8 @@ import type { Msg, PanelState } from '../../utils/messages';
 
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w92';
 
+let pollTimer: ReturnType<typeof setTimeout> | null = null;
+
 const SOURCE_LABELS: Record<string, string> = {
   tmdb: 'source_tmdb',
   imdb: 'source_imdb',
@@ -39,7 +41,8 @@ async function init() {
 function render(app: HTMLElement, state: PanelState, data: RatingsPanelData | null, tabId: number) {
   if (state === 'loading') {
     renderLoading(app);
-    setTimeout(() => init(), 1000);
+    clearTimeout(pollTimer!);
+    pollTimer = setTimeout(() => init(), 1000);
     return;
   }
   if (state === 'no-title' || state === 'idle' || !data) {
@@ -243,9 +246,10 @@ function renderAlternatives(data: RatingsPanelData, tabId: number, app: HTMLElem
         tabId,
         tmdbId: alt.tmdbId,
         mediaType: alt.mediaType,
-      } as Msg);
+      } as Msg).catch(() => {});
       renderLoading(app);
-      setTimeout(() => init(), 1500);
+      clearTimeout(pollTimer!);
+      pollTimer = setTimeout(() => init(), 1500);
     });
 
     if (alt.posterPath) {
@@ -275,9 +279,10 @@ function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement):
   const refreshBtn = document.createElement('button');
   refreshBtn.textContent = t('popup_refresh');
   refreshBtn.addEventListener('click', () => {
-    browser.runtime.sendMessage({ kind: 'refresh', tabId } as Msg);
+    browser.runtime.sendMessage({ kind: 'refresh', tabId } as Msg).catch(() => {});
     renderLoading(app);
-    setTimeout(() => init(), 1500);
+    clearTimeout(pollTimer!);
+    pollTimer = setTimeout(() => init(), 1500);
   });
   actions.appendChild(refreshBtn);
 

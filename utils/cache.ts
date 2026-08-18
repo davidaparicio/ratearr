@@ -4,6 +4,8 @@ const MAX_ENTRIES = 300;
 const PRUNE_COUNT = 50;
 
 let indexLock: Promise<void> = Promise.resolve();
+let indexFailures = 0;
+const MAX_INDEX_FAILURES = 3;
 
 function cacheKey(mediaType: MediaType, tmdbId: number): string {
   return `cache:v1:${mediaType}:tmdb:${tmdbId}`;
@@ -39,7 +41,14 @@ export async function getCached(
       const index = await getIndex();
       index.entries = index.entries.filter((e) => e.key !== key);
       await setIndex(index);
-    }).catch((err) => console.warn('Ratearr: index update failed', err));
+    }).catch((err) => {
+      indexFailures++;
+      console.warn(`Ratearr: index update failed (${indexFailures}/${MAX_INDEX_FAILURES})`, err);
+      if (indexFailures >= MAX_INDEX_FAILURES) {
+        indexFailures = 0;
+        browser.storage.local.remove('cache:index').catch(() => {});
+      }
+    });
     await indexLock;
     return null;
   }
@@ -68,7 +77,14 @@ export async function putCached(
     }
 
     await setIndex(index);
-  }).catch((err) => console.warn('Ratearr: index update failed', err));
+  }).catch((err) => {
+      indexFailures++;
+      console.warn(`Ratearr: index update failed (${indexFailures}/${MAX_INDEX_FAILURES})`, err);
+      if (indexFailures >= MAX_INDEX_FAILURES) {
+        indexFailures = 0;
+        browser.storage.local.remove('cache:index').catch(() => {});
+      }
+    });
   await indexLock;
 }
 
@@ -78,6 +94,9 @@ export async function clearCache(): Promise<void> {
     const keys = index.entries.map((e) => e.key);
     if (keys.length > 0) await browser.storage.local.remove(keys);
     await browser.storage.local.remove('cache:index');
-  }).catch((err) => console.warn('Ratearr: cache clear failed', err));
+  }).catch((err) => {
+      indexFailures++;
+      console.warn(`Ratearr: cache clear failed (${indexFailures}/${MAX_INDEX_FAILURES})`, err);
+    });
   await indexLock;
 }

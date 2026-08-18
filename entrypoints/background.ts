@@ -156,6 +156,9 @@ export default defineBackground(() => {
       if (msg.kind === 'title-detected' && sender.tab?.id != null) {
         const q = msg.query as Record<string, unknown> | undefined;
         if (!q || typeof q.title !== 'string' || !q.ids || typeof q.ids !== 'object') return undefined;
+        const ids = q.ids as Record<string, unknown>;
+        if (ids.tmdb != null && typeof ids.tmdb !== 'number') return undefined;
+        if (ids.imdb != null && typeof ids.imdb !== 'string') return undefined;
         handleTitleDetected(q as unknown as TitleQuery, sender.tab.id)
           .catch((err) => console.error('Ratearr: pipeline error', err));
         return undefined;
