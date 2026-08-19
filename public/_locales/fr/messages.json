@@ -103,5 +103,17 @@
   },
   "options_saved": {
     "message": "Paramètres enregistrés."
+  },
+  "options_backup": {
+    "message": "Sauvegarde"
+  },
+  "options_export": {
+    "message": "Exporter les paramètres"
+  },
+  "options_import": {
+    "message": "Importer les paramètres"
+  },
+  "options_importError": {
+    "message": "Fichier de paramètres invalide."
   }
 }

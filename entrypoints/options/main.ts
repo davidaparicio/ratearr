@@ -96,6 +96,47 @@ async function init() {
 
   app.appendChild(cacheSection);
 
+  // Backup section
+  const backupSection = createSection(t('options_backup'));
+
+  const exportBtn = document.createElement('button');
+  exportBtn.textContent = t('options_export');
+  exportBtn.addEventListener('click', async () => {
+    const current = await getSettings();
+    const blob = new Blob([JSON.stringify(current, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ratearr-settings.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  backupSection.appendChild(exportBtn);
+
+  const importBtn = document.createElement('button');
+  importBtn.textContent = t('options_import');
+  importBtn.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const imported = JSON.parse(text) as Partial<Settings>;
+        await saveSettings(imported);
+        init();
+      } catch {
+        alert(t('options_importError'));
+      }
+    });
+    input.click();
+  });
+  backupSection.appendChild(importBtn);
+
+  app.appendChild(backupSection);
+
   // Save button
   const saveBtn = document.createElement('button');
   saveBtn.className = 'save-btn';

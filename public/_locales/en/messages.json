@@ -134,6 +134,22 @@
     "message": "Settings saved.",
     "description": "Confirmation after saving"
   },
+  "options_backup": {
+    "message": "Backup",
+    "description": "Backup section header"
+  },
+  "options_export": {
+    "message": "Export Settings",
+    "description": "Export settings button"
+  },
+  "options_import": {
+    "message": "Import Settings",
+    "description": "Import settings button"
+  },
+  "options_importError": {
+    "message": "Invalid settings file.",
+    "description": "Shown when import fails"
+  },
   "popup_openSettings": {
     "message": "Check settings",
     "description": "Link to options page shown on error"
