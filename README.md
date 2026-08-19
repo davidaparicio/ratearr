@@ -103,6 +103,10 @@ The extension detects a movie or TV title on supported sites, resolves it via TM
 - TypeScript
 - Vitest — testing
 
+## Privacy
+
+See [PRIVACY.md](PRIVACY.md) for the full privacy policy. In short: no tracking, no analytics, no personal data collection. API keys and cached ratings stay in your browser's local storage.
+
 ## License
 
-See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE) for details.

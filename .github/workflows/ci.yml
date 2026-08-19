@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npm run compile
+
+      - name: Tests
+        run: npm test
+
+      - name: Build Chrome (MV3)
+        run: npx wxt build
+
+      - name: Build Firefox (MV2)
+        run: npx wxt build -b firefox
+
+      - name: Upload Chrome artifact
+        if: matrix.node-version == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: ratearr-chrome-mv3
+          path: .output/chrome-mv3/
+
+      - name: Upload Firefox artifact
+        if: matrix.node-version == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: ratearr-firefox-mv2
+          path: .output/firefox-mv2/
