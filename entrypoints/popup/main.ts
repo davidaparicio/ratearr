@@ -348,6 +348,18 @@ function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement):
   });
   actions.appendChild(refreshBtn);
 
+  const shareBtn = document.createElement('button');
+  shareBtn.textContent = t('popup_share');
+  shareBtn.addEventListener('click', async () => {
+    const text = buildShareText(data);
+    await navigator.clipboard.writeText(text);
+    shareBtn.textContent = '✓';
+    setTimeout(() => {
+      shareBtn.textContent = t('popup_share');
+    }, 1500);
+  });
+  actions.appendChild(shareBtn);
+
   if (data.fromCache) {
     const cacheNote = document.createElement('span');
     cacheNote.className = 'cache-note';
@@ -357,6 +369,24 @@ function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement):
   }
 
   return actions;
+}
+
+function buildShareText(data: RatingsPanelData): string {
+  const lines: string[] = [];
+  const year = data.resolved.year ? ` (${data.resolved.year})` : '';
+  lines.push(`${data.resolved.title}${year}`);
+  if (data.aggregate) {
+    lines.push(`${data.aggregate.value.toFixed(1)} / 10 — ${data.aggregate.sourcesUsed} sources`);
+  }
+  lines.push('');
+  for (const r of data.results) {
+    if (r.status !== 'ok') continue;
+    const label = t(SOURCE_LABELS[r.rating.source] || r.rating.source);
+    lines.push(`${label}: ${r.rating.value} / ${r.rating.scale}`);
+  }
+  lines.push('');
+  lines.push('via Ratearr — https://www.ratearr.com');
+  return lines.join('\n');
 }
 
 function formatCount(n: number): string {

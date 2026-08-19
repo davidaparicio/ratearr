@@ -65,6 +65,9 @@
   "source_telerama_abonnes": {
     "message": "Télérama Abonnés"
   },
+  "popup_share": {
+    "message": "Copier"
+  },
   "popup_didYouMean": {
     "message": "Vous cherchiez peut-être ?"
   },

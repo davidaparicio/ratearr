@@ -82,6 +82,10 @@
     "message": "Télérama Abonnés",
     "description": "Télérama subscriber source label"
   },
+  "popup_share": {
+    "message": "Copy",
+    "description": "Copy ratings summary to clipboard"
+  },
   "popup_didYouMean": {
     "message": "Did you mean?",
     "description": "Header for alternative title suggestions"
