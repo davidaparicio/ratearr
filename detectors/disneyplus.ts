@@ -14,13 +14,11 @@ export const disneyPlusDetector: SiteDetector = {
     const pathMatch = url.pathname.match(DISNEY_TITLE_REGEX);
     const mediaType: MediaType = pathMatch?.[1] === 'series' ? 'tv' : 'movie';
 
-    const rawTitle = doc.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content
-      || doc.title;
+    const rawTitle =
+      doc.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content || doc.title;
     if (!rawTitle) return null;
 
-    const title = rawTitle
-      .replace(/\s*[|–]\s*Disney\+.*$/i, '')
-      .trim();
+    const title = rawTitle.replace(/\s*[|–]\s*Disney\+.*$/i, '').trim();
     if (!title) return null;
 
     return {

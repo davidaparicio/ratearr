@@ -53,7 +53,11 @@ const SOURCE_EXTRACTORS: SourceExtractor[] = [
   },
 ];
 
-export function parseOmdbResponse(data: OmdbResponse, imdbId?: string, title?: string): RatingResult[] {
+export function parseOmdbResponse(
+  data: OmdbResponse,
+  imdbId?: string,
+  title?: string,
+): RatingResult[] {
   if (data.Response === 'False') {
     return SOURCE_EXTRACTORS.map(({ source }) => ({
       status: 'unavailable' as const,
@@ -67,8 +71,10 @@ export function parseOmdbResponse(data: OmdbResponse, imdbId?: string, title?: s
     if (parsed) {
       const rating: Rating = { source, ...parsed };
       if (source === 'imdb' && imdbId) rating.url = `https://www.imdb.com/title/${imdbId}/`;
-      if (source === 'rottentomatoes' && title) rating.url = `https://www.rottentomatoes.com/search?search=${encodeURIComponent(title)}`;
-      if (source === 'metacritic' && title) rating.url = `https://www.metacritic.com/search/${encodeURIComponent(title)}/`;
+      if (source === 'rottentomatoes' && title)
+        rating.url = `https://www.rottentomatoes.com/search?search=${encodeURIComponent(title)}`;
+      if (source === 'metacritic' && title)
+        rating.url = `https://www.metacritic.com/search/${encodeURIComponent(title)}/`;
       return { status: 'ok' as const, rating };
     }
     return { status: 'unavailable' as const, source, reasonKey: 'err_not_found' };

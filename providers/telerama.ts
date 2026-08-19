@@ -9,7 +9,7 @@ interface TeleramaRatings {
   subscribers?: { value: number; count?: number; url: string };
 }
 
-export function parseCriticRating(html: string, pageUrl: string): number | null {
+export function parseCriticRating(html: string): number | null {
   const match = html.match(
     /<script\s+type="application\/ld\+json"\s+data-tag="content">([\s\S]*?)<\/script>/,
   );
@@ -29,26 +29,20 @@ export function parseCriticRating(html: string, pageUrl: string): number | null 
   }
 }
 
-export function parseSubscriberRating(
-  html: string,
-): { value: number; count?: number } | null {
+export function parseSubscriberRating(html: string): { value: number; count?: number } | null {
   const notationMatch = html.match(/notation--readers\s+notation--(\d)/);
   if (!notationMatch) return null;
 
   const value = parseInt(notationMatch[1]!, 10);
   if (Number.isNaN(value) || value < 1 || value > 5) return null;
 
-  const statsMatch = html.match(
-    /comments__globalRatingStats[^>]*>\((\d+)\s+notes?/,
-  );
+  const statsMatch = html.match(/comments__globalRatingStats[^>]*>\((\d+)\s+notes?/);
   const count = statsMatch ? parseInt(statsMatch[1]!, 10) : undefined;
 
   return { value, count };
 }
 
-async function findFilmUrl(
-  title: string,
-): Promise<string | null> {
+async function findFilmUrl(title: string): Promise<string | null> {
   const url = `${TLR_SEARCH}?q=${encodeURIComponent(title)}`;
   const resp = await fetch(url, { credentials: 'include' });
   if (!resp.ok) return null;
@@ -58,9 +52,7 @@ async function findFilmUrl(
   return match ? `${TLR_BASE}${match[1]}` : null;
 }
 
-async function fetchTeleramaRatings(
-  title: string,
-): Promise<TeleramaRatings | null> {
+async function fetchTeleramaRatings(title: string): Promise<TeleramaRatings | null> {
   const filmUrl = await findFilmUrl(title);
   if (!filmUrl) return null;
 
@@ -72,7 +64,7 @@ async function fetchTeleramaRatings(
 
   const ratings: TeleramaRatings = {};
 
-  const criticValue = parseCriticRating(html, filmUrl);
+  const criticValue = parseCriticRating(html);
   if (criticValue != null) {
     ratings.critic = { value: criticValue, url: filmUrl };
   }
@@ -95,9 +87,7 @@ export const teleramaProvider: RatingProvider = {
 
   async fetchRatings(resolved: ResolvedTitle): Promise<RatingResult[]> {
     try {
-      const ratings = await fetchTeleramaRatings(
-        resolved.localizedTitle || resolved.title,
-      );
+      const ratings = await fetchTeleramaRatings(resolved.localizedTitle || resolved.title);
 
       if (!ratings) {
         return this.produces.map((source) => ({

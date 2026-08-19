@@ -10,8 +10,8 @@ export const netflixDetector: SiteDetector = {
   },
 
   extract(doc: Document, _url: URL) {
-    const rawTitle = doc.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content
-      || doc.title;
+    const rawTitle =
+      doc.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content || doc.title;
     if (!rawTitle) return null;
 
     const title = rawTitle
