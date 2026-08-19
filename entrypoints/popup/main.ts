@@ -361,23 +361,25 @@ function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement):
   });
   actions.appendChild(shareBtn);
 
-  if (navigator.share) {
-    const sendBtn = document.createElement('button');
-    sendBtn.textContent = t('popup_send');
-    sendBtn.addEventListener('click', async () => {
-      const year = data.resolved.year ? ` (${data.resolved.year})` : '';
-      const score = data.aggregate ? `${data.aggregate.value.toFixed(1)}/10` : '';
-      const text = t('popup_sendMessage')
-        .replace('$TITLE$', `${data.resolved.title}${year}`)
-        .replace('$SCORE$', score);
-      try {
-        await navigator.share({ text });
-      } catch {
-        /* user cancelled */
-      }
-    });
-    actions.appendChild(sendBtn);
-  }
+  const sendBtn = document.createElement('button');
+  sendBtn.textContent = t('popup_send');
+  sendBtn.addEventListener('click', async () => {
+    const year = data.resolved.year ? ` (${data.resolved.year})` : '';
+    const score = data.aggregate ? `${data.aggregate.value.toFixed(1)}/10` : '';
+    const msg = t('popup_sendMessage')
+      .replace('$TITLE$', `${data.resolved.title}${year}`)
+      .replace('$SCORE$', score);
+    try {
+      await navigator.share({ text: msg });
+    } catch {
+      await navigator.clipboard.writeText(msg);
+    }
+    sendBtn.textContent = '✓';
+    setTimeout(() => {
+      sendBtn.textContent = t('popup_send');
+    }, 1500);
+  });
+  actions.appendChild(sendBtn);
 
   if (data.fromCache) {
     const cacheNote = document.createElement('span');
