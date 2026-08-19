@@ -30,9 +30,10 @@ export default defineConfig({
       browser_specific_settings: {
         gecko: {
           id: 'ratearr@davidaparicio.fr',
-          strict_min_version: '121.0',
+          strict_min_version: '140.0',
           data_collection_permissions: {
-            required: [],
+            required: ['none'],
+            optional: ['technicalAndInteraction'],
           },
         },
       },
