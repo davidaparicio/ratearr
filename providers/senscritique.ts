@@ -72,7 +72,9 @@ async function searchSensCritique(
 
 async function getProductStats(id: number): Promise<number | undefined> {
   try {
-    const data = await scQuery<{ product: ScProductWithStats }>(`{ product(id: ${id}) { stats { ratingCount } } }`);
+    const data = await scQuery<{ product: ScProductWithStats }>(
+      `{ product(id: ${id}) { stats { ratingCount } } }`,
+    );
     return data.product?.stats?.ratingCount;
   } catch {
     return undefined;

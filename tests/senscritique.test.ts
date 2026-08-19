@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { type ScProduct, filterAndRankProducts } from '../providers/senscritique';
+import { filterAndRankProducts, type ScProduct } from '../providers/senscritique';
 
 const fixture = JSON.parse(
   readFileSync(resolve(__dirname, 'fixtures/senscritique-inception.json'), 'utf-8'),

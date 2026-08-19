@@ -1,4 +1,3 @@
-import { normalizeTitle } from '../utils/normalize';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
 
@@ -32,7 +31,7 @@ export function parseJsonLdRating(html: string, pageUrl: string): LbRating | nul
 
     return {
       value: Math.round(agg.ratingValue * 10) / 10,
-      count: typeof agg.ratingCount === 'number' ? agg.ratingCount : undefined!,
+      count: typeof agg.ratingCount === 'number' ? agg.ratingCount : undefined,
       url: pageUrl,
     };
   } catch {
@@ -76,10 +75,7 @@ export const letterboxdProvider: RatingProvider = {
       return [{ status: 'unavailable', source: 'letterboxd', reasonKey: 'err_not_found' }];
     }
 
-    const rating = await fetchLetterboxdRating(
-      resolved.title,
-      resolved.year,
-    );
+    const rating = await fetchLetterboxdRating(resolved.title, resolved.year);
 
     if (!rating) {
       const localizedRating = resolved.localizedTitle
