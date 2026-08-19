@@ -17,6 +17,7 @@ export default defineConfig({
       'https://www.omdbapi.com/*',
       'https://www.allocine.fr/*',
       'https://apollo.senscritique.com/*',
+      'https://letterboxd.com/*',
     ],
     ...(browser === 'firefox' && {
       browser_specific_settings: {

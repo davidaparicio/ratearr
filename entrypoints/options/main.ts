@@ -11,6 +11,7 @@ const SOURCE_IDS: { id: SourceId; labelKey: string }[] = [
   { id: 'allocine-presse', labelKey: 'source_allocine_presse' },
   { id: 'allocine-spectateurs', labelKey: 'source_allocine_spectateurs' },
   { id: 'senscritique', labelKey: 'source_senscritique' },
+  { id: 'letterboxd', labelKey: 'source_letterboxd' },
 ];
 
 async function init() {

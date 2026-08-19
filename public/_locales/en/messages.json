@@ -66,6 +66,10 @@
     "message": "SensCritique",
     "description": "SensCritique source label"
   },
+  "source_letterboxd": {
+    "message": "Letterboxd",
+    "description": "Letterboxd source label"
+  },
   "popup_didYouMean": {
     "message": "Did you mean?",
     "description": "Header for alternative title suggestions"
