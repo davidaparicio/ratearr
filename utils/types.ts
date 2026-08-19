@@ -6,9 +6,10 @@ export type SourceId =
   | 'rottentomatoes'
   | 'metacritic'
   | 'allocine-presse'
-  | 'allocine-spectateurs';
+  | 'allocine-spectateurs'
+  | 'senscritique';
 
-export type ProviderId = 'tmdb' | 'omdb' | 'allocine';
+export type ProviderId = 'tmdb' | 'omdb' | 'allocine' | 'senscritique';
 
 export interface RatingSourceMeta {
   id: SourceId;

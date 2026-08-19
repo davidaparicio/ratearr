@@ -10,6 +10,7 @@ const SOURCE_IDS: { id: SourceId; labelKey: string }[] = [
   { id: 'metacritic', labelKey: 'source_metacritic' },
   { id: 'allocine-presse', labelKey: 'source_allocine_presse' },
   { id: 'allocine-spectateurs', labelKey: 'source_allocine_spectateurs' },
+  { id: 'senscritique', labelKey: 'source_senscritique' },
 ];
 
 async function init() {

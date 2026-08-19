@@ -50,6 +50,9 @@
   "source_allocine_spectateurs": {
     "message": "Allociné Spectateurs"
   },
+  "source_senscritique": {
+    "message": "SensCritique"
+  },
   "popup_didYouMean": {
     "message": "Vous cherchiez peut-être ?"
   },
