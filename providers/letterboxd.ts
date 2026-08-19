@@ -4,7 +4,7 @@ import type { RatingProvider } from './types';
 
 const LB_BASE = 'https://letterboxd.com';
 
-function titleToSlug(title: string): string {
+export function titleToSlug(title: string): string {
   return title
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -21,7 +21,7 @@ interface LbRating {
   url: string;
 }
 
-function parseJsonLdRating(html: string, pageUrl: string): LbRating | null {
+export function parseJsonLdRating(html: string, pageUrl: string): LbRating | null {
   const match = html.match(/<script\s+type="application\/ld\+json">([\s\S]*?)<\/script>/);
   if (!match) return null;
 

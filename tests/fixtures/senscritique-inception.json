@@ -1,0 +1,44 @@
+{
+  "data": {
+    "searchAutocomplete": {
+      "items": [
+        {
+          "product": {
+            "id": 471143,
+            "title": "Inception",
+            "year_of_production": 2010,
+            "rating": 7.5,
+            "url": "/film/inception/471143",
+            "slug": "inception",
+            "universe": 1
+          }
+        },
+        {
+          "product": {
+            "id": 456490,
+            "title": "Inception : Le Script",
+            "year_of_production": 2010,
+            "rating": 7.9,
+            "url": "/livre/inception_le_script/456490",
+            "slug": "inception_le_script",
+            "universe": 2
+          }
+        },
+        {
+          "product": {
+            "id": 6024394,
+            "title": "Inception: Music From the Motion Picture (OST)",
+            "year_of_production": 2010,
+            "rating": 7.4,
+            "url": "/album/inception_music_from_the_motion_picture/6024394",
+            "slug": "inception_music_from_the_motion_picture",
+            "universe": 7
+          }
+        },
+        {
+          "product": null
+        }
+      ]
+    }
+  }
+}
