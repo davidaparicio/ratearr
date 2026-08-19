@@ -8,6 +8,10 @@ export default defineContentScript({
     '*://www.allocine.fr/series/*',
     '*://www.themoviedb.org/movie/*',
     '*://www.themoviedb.org/tv/*',
+    '*://www.netflix.com/title/*',
+    '*://www.primevideo.com/detail/*',
+    '*://www.disneyplus.com/movies/*',
+    '*://www.disneyplus.com/series/*',
   ],
   main() {
     let lastUrl = location.href;
