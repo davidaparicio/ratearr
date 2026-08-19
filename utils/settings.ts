@@ -2,6 +2,9 @@ import type { SourceId } from './types';
 
 export interface Settings {
   enabledSources: Record<SourceId, boolean>;
+  sourceWeights: Partial<Record<SourceId, number>>;
+  badgeGreenMin: number;
+  badgeYellowMin: number;
   tmdbApiKey: string;
   omdbApiKey: string;
   cacheTtlHours: number;
@@ -20,6 +23,9 @@ export const DEFAULT_SETTINGS: Settings = {
     telerama: false,
     'telerama-abonnes': false,
   },
+  sourceWeights: {},
+  badgeGreenMin: 7,
+  badgeYellowMin: 5,
   tmdbApiKey: '',
   omdbApiKey: '',
   cacheTtlHours: 24,

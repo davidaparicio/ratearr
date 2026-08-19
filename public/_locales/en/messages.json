@@ -134,6 +134,18 @@
     "message": "Settings saved.",
     "description": "Confirmation after saving"
   },
+  "options_badge": {
+    "message": "Badge Colors",
+    "description": "Badge threshold section header"
+  },
+  "options_badgeGreen": {
+    "message": "Green above (/10)",
+    "description": "Green badge threshold"
+  },
+  "options_badgeYellow": {
+    "message": "Yellow above (/10)",
+    "description": "Yellow badge threshold"
+  },
   "options_backup": {
     "message": "Backup",
     "description": "Backup section header"

@@ -30,16 +30,30 @@ async function init() {
   // Sources section
   const sourcesSection = createSection(t('options_sources'));
   for (const src of SOURCE_IDS) {
-    const row = document.createElement('label');
+    const row = document.createElement('div');
     row.className = 'option-row';
+    const lbl = document.createElement('label');
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.checked = settings.enabledSources[src.id];
     cb.dataset.source = src.id;
-    row.appendChild(cb);
+    lbl.appendChild(cb);
     const span = document.createElement('span');
     span.textContent = t(src.labelKey);
-    row.appendChild(span);
+    lbl.appendChild(span);
+    row.appendChild(lbl);
+
+    const weight = document.createElement('select');
+    weight.className = 'weight-select';
+    weight.dataset.weightSource = src.id;
+    for (const w of [0.5, 1, 1.5, 2]) {
+      const opt = document.createElement('option');
+      opt.value = String(w);
+      opt.textContent = `×${w}`;
+      opt.selected = (settings.sourceWeights[src.id] ?? 1) === w;
+      weight.appendChild(opt);
+    }
+    row.appendChild(weight);
     sourcesSection.appendChild(row);
   }
   app.appendChild(sourcesSection);
@@ -96,6 +110,43 @@ async function init() {
 
   app.appendChild(cacheSection);
 
+  // Badge section
+  const badgeSection = createSection(t('options_badge'));
+
+  const greenRow = document.createElement('div');
+  greenRow.className = 'option-row';
+  const greenLabel = document.createElement('label');
+  greenLabel.htmlFor = 'badge-green';
+  greenLabel.textContent = t('options_badgeGreen');
+  greenRow.appendChild(greenLabel);
+  const greenInput = document.createElement('input');
+  greenInput.type = 'number';
+  greenInput.id = 'badge-green';
+  greenInput.min = '0';
+  greenInput.max = '10';
+  greenInput.step = '0.5';
+  greenInput.value = String(settings.badgeGreenMin);
+  greenRow.appendChild(greenInput);
+  badgeSection.appendChild(greenRow);
+
+  const yellowRow = document.createElement('div');
+  yellowRow.className = 'option-row';
+  const yellowLabel = document.createElement('label');
+  yellowLabel.htmlFor = 'badge-yellow';
+  yellowLabel.textContent = t('options_badgeYellow');
+  yellowRow.appendChild(yellowLabel);
+  const yellowInput = document.createElement('input');
+  yellowInput.type = 'number';
+  yellowInput.id = 'badge-yellow';
+  yellowInput.min = '0';
+  yellowInput.max = '10';
+  yellowInput.step = '0.5';
+  yellowInput.value = String(settings.badgeYellowMin);
+  yellowRow.appendChild(yellowInput);
+  badgeSection.appendChild(yellowRow);
+
+  app.appendChild(badgeSection);
+
   // Backup section
   const backupSection = createSection(t('options_backup'));
 
@@ -151,6 +202,16 @@ async function init() {
     for (const cb of checkboxes) {
       newSettings.enabledSources![cb.dataset.source as SourceId] = cb.checked;
     }
+
+    const weights: Partial<Record<SourceId, number>> = {};
+    const selects = app.querySelectorAll<HTMLSelectElement>('select[data-weight-source]');
+    for (const sel of selects) {
+      const w = parseFloat(sel.value);
+      if (w !== 1) weights[sel.dataset.weightSource as SourceId] = w;
+    }
+    newSettings.sourceWeights = weights;
+    newSettings.badgeGreenMin = Math.max(0, Math.min(10, parseFloat(greenInput.value) || 7));
+    newSettings.badgeYellowMin = Math.max(0, Math.min(10, parseFloat(yellowInput.value) || 5));
 
     const tmdbInput = document.getElementById('tmdb-key') as HTMLInputElement;
     const omdbInput = document.getElementById('omdb-key') as HTMLInputElement;

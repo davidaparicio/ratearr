@@ -101,7 +101,7 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
       if (tabGenerations.get(tabId) !== gen) return;
       const panelData = { ...cached, alternatives, fromCache: true };
       tabStates.set(tabId, { state: 'ready', data: panelData });
-      updateBadge(tabId, panelData.aggregate);
+      updateBadge(tabId, panelData.aggregate, settings.badgeGreenMin, settings.badgeYellowMin);
       return;
     }
 
@@ -122,7 +122,7 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
 
     if (tabGenerations.get(tabId) !== gen) return;
 
-    const agg = aggregate(allResults);
+    const agg = aggregate(allResults, settings.sourceWeights);
 
     const panelData: RatingsPanelData = {
       resolved,
@@ -135,21 +135,26 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
 
     await putCached(resolved.mediaType, resolved.tmdbId, panelData);
     tabStates.set(tabId, { state: 'ready', data: panelData });
-    updateBadge(tabId, agg);
+    updateBadge(tabId, agg, settings.badgeGreenMin, settings.badgeYellowMin);
   } finally {
     inFlightTabs.delete(tabId);
   }
 }
 
-function updateBadge(tabId: number, agg: { value: number } | undefined) {
+function updateBadge(
+  tabId: number,
+  agg: { value: number } | undefined,
+  greenMin = 7,
+  yellowMin = 5,
+) {
   if (!agg) {
     browserAction.setBadgeText({ tabId, text: '' });
     return;
   }
   const text = agg.value.toFixed(1);
   let color: string;
-  if (agg.value >= 7) color = '#1a7f37';
-  else if (agg.value >= 5) color = '#b58105';
+  if (agg.value >= greenMin) color = '#1a7f37';
+  else if (agg.value >= yellowMin) color = '#b58105';
   else color = '#c0392b';
 
   browserAction.setBadgeText({ tabId, text });

@@ -104,6 +104,15 @@
   "options_saved": {
     "message": "Paramètres enregistrés."
   },
+  "options_badge": {
+    "message": "Couleurs du badge"
+  },
+  "options_badgeGreen": {
+    "message": "Vert au-dessus de (/10)"
+  },
+  "options_badgeYellow": {
+    "message": "Jaune au-dessus de (/10)"
+  },
   "options_backup": {
     "message": "Sauvegarde"
   },
