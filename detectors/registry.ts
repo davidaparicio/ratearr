@@ -1,9 +1,12 @@
 import { allocineDetector } from './allocine';
 import { disneyPlusDetector } from './disneyplus';
 import { imdbDetector } from './imdb';
+import { letterboxdDetector } from './letterboxd';
 import { netflixDetector } from './netflix';
 import { primeVideoDetector } from './primevideo';
+import { senscritiqueDetector } from './senscritique';
 import { tmdbSiteDetector } from './tmdb-site';
+import { wikipediaDetector } from './wikipedia';
 import type { SiteDetector } from './types';
 
 const ALL_DETECTORS: SiteDetector[] = [
@@ -13,6 +16,9 @@ const ALL_DETECTORS: SiteDetector[] = [
   netflixDetector,
   primeVideoDetector,
   disneyPlusDetector,
+  letterboxdDetector,
+  senscritiqueDetector,
+  wikipediaDetector,
 ];
 
 export function getDetector(hostname: string): SiteDetector | undefined {

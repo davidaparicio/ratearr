@@ -12,6 +12,14 @@ export default defineContentScript({
     '*://www.primevideo.com/detail/*',
     '*://www.disneyplus.com/movies/*',
     '*://www.disneyplus.com/series/*',
+    '*://letterboxd.com/film/*',
+    '*://www.senscritique.com/film/*',
+    '*://www.senscritique.com/serie/*',
+    '*://en.wikipedia.org/wiki/*',
+    '*://fr.wikipedia.org/wiki/*',
+    '*://es.wikipedia.org/wiki/*',
+    '*://de.wikipedia.org/wiki/*',
+    '*://it.wikipedia.org/wiki/*',
   ],
   main() {
     let lastUrl = location.href;
