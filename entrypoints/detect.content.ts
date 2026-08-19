@@ -20,7 +20,7 @@ export default defineContentScript({
 
       const url = new URL(location.href);
       const detector = getDetector(url.hostname);
-      if (!detector || !detector.matches(url)) return;
+      if (!detector?.matches(url)) return;
 
       const query = detector.extract(document, url);
       if (query) {

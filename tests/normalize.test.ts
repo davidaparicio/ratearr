@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { normalizeTitle, titleSimilarity } from '../utils/normalize';
 
 describe('normalizeTitle', () => {
@@ -19,8 +19,9 @@ describe('normalizeTitle', () => {
   });
 
   it('handles mixed diacritics and articles', () => {
-    expect(normalizeTitle('Le Fabuleux Destin d\'Amélie Poulain'))
-      .toBe('fabuleux destin damelie poulain');
+    expect(normalizeTitle("Le Fabuleux Destin d'Amélie Poulain")).toBe(
+      'fabuleux destin damelie poulain',
+    );
   });
 });
 

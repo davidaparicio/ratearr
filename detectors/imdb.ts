@@ -1,5 +1,5 @@
-import type { SiteDetector } from './types';
 import { extractJsonLd } from './jsonld';
+import type { SiteDetector } from './types';
 
 const IMDB_TITLE_REGEX = /\/title\/(tt\d+)/;
 

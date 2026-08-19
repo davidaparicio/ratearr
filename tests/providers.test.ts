@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { parseOmdbResponse } from '../providers/omdb';
 import inceptionFixture from './fixtures/omdb-inception.json';
-import notFoundFixture from './fixtures/omdb-not-found.json';
 import naFixture from './fixtures/omdb-na-ratings.json';
+import notFoundFixture from './fixtures/omdb-not-found.json';
 
 describe('parseOmdbResponse', () => {
   it('parses a full response with all three sources', () => {
@@ -42,7 +42,9 @@ describe('parseOmdbResponse', () => {
   it('handles N/A ratings gracefully', () => {
     const results = parseOmdbResponse(naFixture, 'tt9999999');
     expect(results).toHaveLength(3);
-    const imdb = results.find((r) => 'source' in r && r.status === 'unavailable' && r.source === 'imdb');
+    const imdb = results.find(
+      (r) => 'source' in r && r.status === 'unavailable' && r.source === 'imdb',
+    );
     expect(imdb).toBeDefined();
   });
 });

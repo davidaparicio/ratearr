@@ -1,7 +1,13 @@
-import type { RatingProvider } from './types';
-import type { TitleQuery, ResolvedTitle, RatingResult, TitleCandidate, MediaType } from '../utils/types';
-import type { Settings } from '../utils/settings';
 import { rankByTitleMatch } from '../utils/normalize';
+import type { Settings } from '../utils/settings';
+import type {
+  MediaType,
+  RatingResult,
+  ResolvedTitle,
+  TitleCandidate,
+  TitleQuery,
+} from '../utils/types';
+import type { RatingProvider } from './types';
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 
@@ -15,7 +21,11 @@ function validateMediaType(mediaType: string): asserts mediaType is MediaType {
   }
 }
 
-async function tmdbFetch(path: string, params: Record<string, string>, settings: Settings): Promise<any> {
+async function tmdbFetch(
+  path: string,
+  params: Record<string, string>,
+  settings: Settings,
+): Promise<any> {
   const key = apiKey(settings);
   if (!key) throw new Error('no_tmdb_key');
   const url = new URL(`${TMDB_BASE}${path}`);
@@ -58,13 +68,16 @@ async function resolveByTmdbId(query: TitleQuery, settings: Settings): Promise<R
   };
 }
 
-async function resolveByImdbId(query: TitleQuery, settings: Settings): Promise<ResolutionResult | null> {
-  const data = await tmdbFetch('/find/' + query.ids.imdb, { external_source: 'imdb_id' }, settings);
+async function resolveByImdbId(
+  query: TitleQuery,
+  settings: Settings,
+): Promise<ResolutionResult | null> {
+  const data = await tmdbFetch(`/find/${query.ids.imdb}`, { external_source: 'imdb_id' }, settings);
   const movie = data.movie_results?.[0];
   const tv = data.tv_results?.[0];
   const result = movie || tv;
   if (!result) return null;
-  const mediaType = movie ? 'movie' as const : 'tv' as const;
+  const mediaType = movie ? ('movie' as const) : ('tv' as const);
   return {
     resolved: {
       tmdbId: result.id,
@@ -102,7 +115,10 @@ async function fetchBilingualResults(
   return results;
 }
 
-async function resolveByTitleSearch(query: TitleQuery, settings: Settings): Promise<ResolutionResult | null> {
+async function resolveByTitleSearch(
+  query: TitleQuery,
+  settings: Settings,
+): Promise<ResolutionResult | null> {
   const mediaType = query.mediaType ?? 'movie';
   validateMediaType(mediaType);
   const endpoint = mediaType === 'tv' ? '/search/tv' : '/search/movie';
@@ -112,16 +128,11 @@ async function resolveByTitleSearch(query: TitleQuery, settings: Settings): Prom
   const results = await fetchBilingualResults(endpoint, baseParams, settings);
   if (results.length === 0) return null;
 
-  const ranked = rankByTitleMatch(
-    results,
-    query.title,
-    query.year,
-    {
-      getTitle: (r) => r.title || r.name || '',
-      getAltTitle: (r) => r.original_title || r.original_name || '',
-      getYear: (r) => parseYear(r.release_date || r.first_air_date),
-    },
-  ).sort((a, b) => {
+  const ranked = rankByTitleMatch(results, query.title, query.year, {
+    getTitle: (r) => r.title || r.name || '',
+    getAltTitle: (r) => r.original_title || r.original_name || '',
+    getYear: (r) => parseYear(r.release_date || r.first_air_date),
+  }).sort((a, b) => {
     if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;
     if (a.score !== b.score) return b.score - a.score;
     return (b.item.popularity || 0) - (a.item.popularity || 0);
@@ -139,16 +150,14 @@ async function resolveByTitleSearch(query: TitleQuery, settings: Settings): Prom
     // non-critical
   }
 
-  const alternatives: TitleCandidate[] = ranked
-    .slice(1, 4)
-    .map((r) => ({
-      tmdbId: r.item.id,
-      mediaType,
-      title: r.item.title || r.item.name,
-      originalTitle: r.item.original_title || r.item.original_name || undefined,
-      year: parseYear(r.item.release_date || r.item.first_air_date),
-      posterPath: r.item.poster_path || undefined,
-    }));
+  const alternatives: TitleCandidate[] = ranked.slice(1, 4).map((r) => ({
+    tmdbId: r.item.id,
+    mediaType,
+    title: r.item.title || r.item.name,
+    originalTitle: r.item.original_title || r.item.original_name || undefined,
+    year: parseYear(r.item.release_date || r.item.first_air_date),
+    posterPath: r.item.poster_path || undefined,
+  }));
 
   return {
     resolved: {
@@ -164,17 +173,17 @@ async function resolveByTitleSearch(query: TitleQuery, settings: Settings): Prom
   };
 }
 
-export async function resolveTitle(query: TitleQuery, settings: Settings): Promise<ResolutionResult | null> {
+export async function resolveTitle(
+  query: TitleQuery,
+  settings: Settings,
+): Promise<ResolutionResult | null> {
   if (query.ids.tmdb) return resolveByTmdbId(query, settings);
   if (query.ids.imdb) return resolveByImdbId(query, settings);
   return resolveByTitleSearch(query, settings);
 }
 
 export function parseTmdbDetail(data: any): RatingResult {
-  if (
-    typeof data.vote_average === 'number' &&
-    typeof data.vote_count === 'number'
-  ) {
+  if (typeof data.vote_average === 'number' && typeof data.vote_count === 'number') {
     return {
       status: 'ok',
       rating: {
@@ -197,9 +206,8 @@ export const tmdbProvider: RatingProvider = {
   },
 
   async fetchRatings(resolved: ResolvedTitle, settings: Settings): Promise<RatingResult[]> {
-    const endpoint = resolved.mediaType === 'tv'
-      ? `/tv/${resolved.tmdbId}`
-      : `/movie/${resolved.tmdbId}`;
+    const endpoint =
+      resolved.mediaType === 'tv' ? `/tv/${resolved.tmdbId}` : `/movie/${resolved.tmdbId}`;
     const data = await tmdbFetch(endpoint, { language: 'en-US' }, settings);
     const result = parseTmdbDetail(data);
     if (result.status === 'ok' && result.rating) {

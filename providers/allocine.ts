@@ -1,8 +1,6 @@
-import type { RatingProvider } from './types';
-import type { ResolvedTitle, RatingResult } from '../utils/types';
 import { rankByTitleMatch } from '../utils/normalize';
-
-import type { MediaType } from '../utils/types';
+import type { MediaType, RatingResult, ResolvedTitle } from '../utils/types';
+import type { RatingProvider } from './types';
 
 const ALLOCINE_BASE = 'https://www.allocine.fr';
 
@@ -25,7 +23,7 @@ export function parseAllocineHtml(html: string, pageUrl: string): AllocineRating
     const rawScore = noteMatch[1].trim();
     if (rawScore === '--' || rawScore === '') continue;
     const value = parseFloat(rawScore.replace(',', '.'));
-    if (isNaN(value)) continue;
+    if (Number.isNaN(value)) continue;
 
     const countMatch = block.match(/stareval-review[^>]*>\s*(\d[\d\s]*)\s*(?:notes|critiques)/i);
     const count = countMatch ? parseInt(countMatch[1].replace(/\s/g, ''), 10) : undefined;
@@ -49,7 +47,11 @@ interface AutocompleteResult {
   data?: { year?: string };
 }
 
-async function searchAllocine(title: string, mediaType: MediaType, year?: number): Promise<string | null> {
+async function searchAllocine(
+  title: string,
+  mediaType: MediaType,
+  year?: number,
+): Promise<string | null> {
   const entityFilter = mediaType === 'tv' ? 'series' : 'movie';
   const url = new URL(`${ALLOCINE_BASE}/_/autocomplete/${entityFilter}`);
   url.searchParams.set('q', title);
@@ -62,16 +64,11 @@ async function searchAllocine(title: string, mediaType: MediaType, year?: number
   const matches = results.filter((r) => r.entity_type === entityFilter);
   if (matches.length === 0) return null;
 
-  const ranked = rankByTitleMatch(
-    matches,
-    title,
-    year,
-    {
-      getTitle: (r) => r.label || '',
-      getAltTitle: (r) => r.original_label || '',
-      getYear: (r) => r.data?.year ? parseInt(r.data.year, 10) : undefined,
-    },
-  );
+  const ranked = rankByTitleMatch(matches, title, year, {
+    getTitle: (r) => r.label || '',
+    getAltTitle: (r) => r.original_label || '',
+    getYear: (r) => (r.data?.year ? parseInt(r.data.year, 10) : undefined),
+  });
 
   const entityId = ranked[0].item.entity_id;
   if (!/^\d+$/.test(entityId)) return null;
@@ -129,7 +126,11 @@ export const allocineProvider: RatingProvider = {
         },
       });
     } else {
-      results.push({ status: 'unavailable', source: 'allocine-presse', reasonKey: 'err_not_found' });
+      results.push({
+        status: 'unavailable',
+        source: 'allocine-presse',
+        reasonKey: 'err_not_found',
+      });
     }
 
     if (ratings?.spectateurs) {
@@ -144,7 +145,11 @@ export const allocineProvider: RatingProvider = {
         },
       });
     } else {
-      results.push({ status: 'unavailable', source: 'allocine-spectateurs', reasonKey: 'err_not_found' });
+      results.push({
+        status: 'unavailable',
+        source: 'allocine-spectateurs',
+        reasonKey: 'err_not_found',
+      });
     }
 
     return results;

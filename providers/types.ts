@@ -1,5 +1,5 @@
-import type { ResolvedTitle, RatingResult, SourceId } from '../utils/types';
 import type { Settings } from '../utils/settings';
+import type { RatingResult, ResolvedTitle, SourceId } from '../utils/types';
 
 export interface RatingProvider {
   id: 'tmdb' | 'omdb' | 'allocine';

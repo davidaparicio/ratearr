@@ -1,10 +1,10 @@
-import type { TitleQuery, ResolvedTitle, RatingsPanelData, RatingResult } from '../utils/types';
+import { getEnabledProviders, unavailableResults } from '../providers/registry';
+import { resolveTitle } from '../providers/tmdb';
+import { aggregate } from '../utils/aggregate';
+import { getCached, putCached } from '../utils/cache';
 import type { Msg } from '../utils/messages';
 import { getSettings, type Settings } from '../utils/settings';
-import { resolveTitle } from '../providers/tmdb';
-import { getEnabledProviders, unavailableResults } from '../providers/registry';
-import { getCached, putCached } from '../utils/cache';
-import { aggregate } from '../utils/aggregate';
+import type { RatingResult, RatingsPanelData, ResolvedTitle, TitleQuery } from '../utils/types';
 
 const PROVIDER_TIMEOUT_MS = 8000;
 
@@ -52,8 +52,14 @@ function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('timeout')), ms);
     promise.then(
-      (v) => { clearTimeout(timer); resolve(v); },
-      (e) => { clearTimeout(timer); reject(e); },
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      },
     );
   });
 }
@@ -152,8 +158,14 @@ export default defineBackground(() => {
     };
     browserAction.setBadgeText({ tabId: tab.id, text: '...' });
     browserAction.setBadgeBackgroundColor({ tabId: tab.id, color: '#6366f1' });
-    handleTitleDetected(query, tab.id).catch((err) => console.error('Ratearr: pipeline error', err));
-    try { browserAction.openPopup?.(); } catch { /* not supported */ }
+    handleTitleDetected(query, tab.id).catch((err) =>
+      console.error('Ratearr: pipeline error', err),
+    );
+    try {
+      browserAction.openPopup?.();
+    } catch {
+      /* not supported */
+    }
   });
 
   browser.runtime.onMessage.addListener(
@@ -163,12 +175,14 @@ export default defineBackground(() => {
 
       if (msg.kind === 'title-detected' && sender.tab?.id != null) {
         const q = msg.query as Record<string, unknown> | undefined;
-        if (!q || typeof q.title !== 'string' || !q.ids || typeof q.ids !== 'object') return undefined;
+        if (!q || typeof q.title !== 'string' || !q.ids || typeof q.ids !== 'object')
+          return undefined;
         const ids = q.ids as Record<string, unknown>;
         if (ids.tmdb != null && typeof ids.tmdb !== 'number') return undefined;
         if (ids.imdb != null && typeof ids.imdb !== 'string') return undefined;
-        handleTitleDetected(q as unknown as TitleQuery, sender.tab.id)
-          .catch((err) => console.error('Ratearr: pipeline error', err));
+        handleTitleDetected(q as unknown as TitleQuery, sender.tab.id).catch((err) =>
+          console.error('Ratearr: pipeline error', err),
+        );
         return undefined;
       }
 
@@ -185,7 +199,8 @@ export default defineBackground(() => {
 
       if (msg.kind === 'select-alternative') {
         if (typeof msg.tabId !== 'number' || typeof msg.tmdbId !== 'number') return undefined;
-        if (msg.mediaType != null && msg.mediaType !== 'movie' && msg.mediaType !== 'tv') return undefined;
+        if (msg.mediaType != null && msg.mediaType !== 'movie' && msg.mediaType !== 'tv')
+          return undefined;
         tabStates.set(msg.tabId, { state: 'loading', data: null });
         const query: TitleQuery = {
           title: '',
@@ -193,8 +208,9 @@ export default defineBackground(() => {
           mediaType: (msg.mediaType as TitleQuery['mediaType']) ?? 'movie',
           sourceSite: 'alternative',
         };
-        handleTitleDetected(query, msg.tabId)
-          .catch((err) => console.error('Ratearr: pipeline error', err));
+        handleTitleDetected(query, msg.tabId).catch((err) =>
+          console.error('Ratearr: pipeline error', err),
+        );
         return undefined;
       }
 
@@ -213,8 +229,9 @@ export default defineBackground(() => {
             },
             sourceSite: 'refresh',
           };
-          handleTitleDetected(query, msg.tabId)
-            .catch((err) => console.error('Ratearr: pipeline error', err));
+          handleTitleDetected(query, msg.tabId).catch((err) =>
+            console.error('Ratearr: pipeline error', err),
+          );
         }
         return undefined;
       }

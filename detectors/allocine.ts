@@ -1,5 +1,5 @@
-import type { SiteDetector } from './types';
 import { extractJsonLd } from './jsonld';
+import type { SiteDetector } from './types';
 
 const ALLOCINE_FILM_REGEX = /^\/(film|series)\/fichefilm_gen_cfilm=(\d+)/;
 const ALLOCINE_SLUG_REGEX = /^\/(film|series)\//;

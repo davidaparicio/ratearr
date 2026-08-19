@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { aggregate } from '../utils/aggregate';
 import type { RatingResult } from '../utils/types';
 
@@ -18,9 +18,9 @@ describe('aggregate', () => {
     ];
     const result = aggregate(results);
     expect(result).toBeDefined();
-    expect(result!.value).toBe(8.3);
-    expect(result!.sourcesUsed).toBe(3);
-    expect(result!.scale).toBe(10);
+    expect(result?.value).toBe(8.3);
+    expect(result?.sourcesUsed).toBe(3);
+    expect(result?.scale).toBe(10);
   });
 
   it('ignores unavailable results', () => {
@@ -29,7 +29,7 @@ describe('aggregate', () => {
       { status: 'unavailable', source: 'tmdb', reasonKey: 'err_no_key' },
     ];
     const result = aggregate(results);
-    expect(result!.value).toBe(7.5);
-    expect(result!.sourcesUsed).toBe(1);
+    expect(result?.value).toBe(7.5);
+    expect(result?.sourcesUsed).toBe(1);
   });
 });

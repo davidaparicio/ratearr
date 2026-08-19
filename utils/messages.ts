@@ -1,4 +1,4 @@
-import type { TitleQuery, RatingsPanelData, MediaType } from './types';
+import type { MediaType, RatingsPanelData, TitleQuery } from './types';
 
 export type PanelState = 'idle' | 'loading' | 'ready' | 'no-title' | 'error' | 'not-found';
 
@@ -14,7 +14,10 @@ export function sendToBackground(msg: Msg): Promise<Msg> {
 }
 
 export function onMessage(
-  handler: (msg: Msg, sender: browser.Runtime.MessageSender) => Promise<Msg | void> | void,
+  handler: (
+    msg: Msg,
+    sender: browser.Runtime.MessageSender,
+  ) => Promise<Msg | undefined> | undefined,
 ): void {
   browser.runtime.onMessage.addListener(
     (message: unknown, sender: browser.Runtime.MessageSender) => {

@@ -1,6 +1,6 @@
-import type { RatingProvider } from './types';
-import type { ResolvedTitle, RatingResult, Rating, SourceId } from '../utils/types';
 import type { Settings } from '../utils/settings';
+import type { Rating, RatingResult, ResolvedTitle, SourceId } from '../utils/types';
+import type { RatingProvider } from './types';
 
 const OMDB_BASE = 'https://www.omdbapi.com/';
 
@@ -29,7 +29,7 @@ const SOURCE_EXTRACTORS: SourceExtractor[] = [
     extract: (data) => {
       if (!data.imdbRating || data.imdbRating === 'N/A') return null;
       const value = parseFloat(data.imdbRating);
-      if (isNaN(value)) return null;
+      if (Number.isNaN(value)) return null;
       return { value, scale: 10, count: parseVoteCount(data.imdbVotes) };
     },
   },
@@ -56,7 +56,9 @@ const SOURCE_EXTRACTORS: SourceExtractor[] = [
 export function parseOmdbResponse(data: OmdbResponse, imdbId?: string): RatingResult[] {
   if (data.Response === 'False') {
     return SOURCE_EXTRACTORS.map(({ source }) => ({
-      status: 'unavailable' as const, source, reasonKey: 'err_not_found',
+      status: 'unavailable' as const,
+      source,
+      reasonKey: 'err_not_found',
     }));
   }
 
@@ -75,7 +77,7 @@ function parseVoteCount(votes?: string): number | undefined {
   if (!votes || votes === 'N/A') return undefined;
   const cleaned = votes.replace(/,/g, '');
   const n = parseInt(cleaned, 10);
-  return isNaN(n) ? undefined : n;
+  return Number.isNaN(n) ? undefined : n;
 }
 
 export const omdbProvider: RatingProvider = {

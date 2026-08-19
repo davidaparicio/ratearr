@@ -1,6 +1,6 @@
 import { applyI18n, t } from '../../utils/i18n';
-import type { RatingsPanelData, RatingResult, TitleCandidate } from '../../utils/types';
 import type { Msg, PanelState } from '../../utils/messages';
+import type { RatingResult, RatingsPanelData } from '../../utils/types';
 
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w92';
 
@@ -26,10 +26,10 @@ async function init() {
 
   renderLoading(app);
 
-  const response = await browser.runtime.sendMessage({
+  const response = (await browser.runtime.sendMessage({
     kind: 'get-panel-data',
     tabId: tab.id,
-  } as Msg) as Msg;
+  } as Msg)) as Msg;
 
   if (response?.kind === 'panel-data') {
     render(app, response.state, response.data, tab.id);
@@ -185,9 +185,7 @@ function renderRatingsList(data: RatingsPanelData): HTMLElement {
   list.className = 'ratings-list';
   for (const result of data.results) {
     list.appendChild(
-      result.status === 'ok'
-        ? renderOkRatingRow(result)
-        : renderUnavailableRatingRow(result),
+      result.status === 'ok' ? renderOkRatingRow(result) : renderUnavailableRatingRow(result),
     );
   }
   return list;
@@ -227,7 +225,9 @@ function renderOkRatingRow(result: Extract<RatingResult, { status: 'ok' }>): HTM
   return row;
 }
 
-function renderUnavailableRatingRow(result: Extract<RatingResult, { status: 'unavailable' }>): HTMLElement {
+function renderUnavailableRatingRow(
+  result: Extract<RatingResult, { status: 'unavailable' }>,
+): HTMLElement {
   const row = document.createElement('div');
   row.className = 'rating-row unavailable';
 
@@ -276,7 +276,11 @@ function renderInsight(data: RatingsPanelData): HTMLElement | null {
   return null;
 }
 
-function renderAlternatives(data: RatingsPanelData, tabId: number, app: HTMLElement): HTMLElement | null {
+function renderAlternatives(
+  data: RatingsPanelData,
+  tabId: number,
+  app: HTMLElement,
+): HTMLElement | null {
   if (!data.alternatives || data.alternatives.length === 0) return null;
 
   const section = document.createElement('div');
@@ -290,12 +294,14 @@ function renderAlternatives(data: RatingsPanelData, tabId: number, app: HTMLElem
     const row = document.createElement('button');
     row.className = 'alt-row';
     row.addEventListener('click', () => {
-      browser.runtime.sendMessage({
-        kind: 'select-alternative',
-        tabId,
-        tmdbId: alt.tmdbId,
-        mediaType: alt.mediaType,
-      } as Msg).catch(() => {});
+      browser.runtime
+        .sendMessage({
+          kind: 'select-alternative',
+          tabId,
+          tmdbId: alt.tmdbId,
+          mediaType: alt.mediaType,
+        } as Msg)
+        .catch(() => {});
       renderLoading(app);
       clearTimeout(pollTimer!);
       pollTimer = setTimeout(() => init(), 1500);

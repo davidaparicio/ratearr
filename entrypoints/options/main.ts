@@ -1,6 +1,6 @@
-import { applyI18n, t } from '../../utils/i18n';
-import { getSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from '../../utils/settings';
 import { clearCache } from '../../utils/cache';
+import { applyI18n, t } from '../../utils/i18n';
+import { DEFAULT_SETTINGS, getSettings, type Settings, saveSettings } from '../../utils/settings';
 import type { SourceId } from '../../utils/types';
 
 const SOURCE_IDS: { id: SourceId; labelKey: string }[] = [
@@ -43,12 +43,20 @@ async function init() {
   // API Keys section
   const keysSection = createSection(t('options_apiKeys'));
 
-  const tmdbRow = createKeyInput('TMDB', settings.tmdbApiKey, 'tmdb-key',
-    'https://www.themoviedb.org/settings/api');
+  const tmdbRow = createKeyInput(
+    'TMDB',
+    settings.tmdbApiKey,
+    'tmdb-key',
+    'https://www.themoviedb.org/settings/api',
+  );
   keysSection.appendChild(tmdbRow);
 
-  const omdbRow = createKeyInput('OMDb', settings.omdbApiKey, 'omdb-key',
-    'https://www.omdbapi.com/apikey.aspx');
+  const omdbRow = createKeyInput(
+    'OMDb',
+    settings.omdbApiKey,
+    'omdb-key',
+    'https://www.omdbapi.com/apikey.aspx',
+  );
   keysSection.appendChild(omdbRow);
 
   app.appendChild(keysSection);
@@ -76,7 +84,9 @@ async function init() {
   clearBtn.addEventListener('click', async () => {
     await clearCache();
     clearBtn.textContent = '✓';
-    setTimeout(() => { clearBtn.textContent = t('options_clearCache'); }, 1500);
+    setTimeout(() => {
+      clearBtn.textContent = t('options_clearCache');
+    }, 1500);
   });
   cacheSection.appendChild(clearBtn);
 

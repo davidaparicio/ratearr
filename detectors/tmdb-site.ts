@@ -1,5 +1,5 @@
-import type { SiteDetector } from './types';
 import { extractJsonLd } from './jsonld';
+import type { SiteDetector } from './types';
 
 const TMDB_PATH_REGEX = /^\/(movie|tv)\/(\d+)/;
 
@@ -13,7 +13,7 @@ export const tmdbSiteDetector: SiteDetector = {
   extract(doc: Document, url: URL) {
     const pathMatch = url.pathname.match(TMDB_PATH_REGEX);
     const tmdbId = pathMatch ? parseInt(pathMatch[2], 10) : undefined;
-    const mediaType = pathMatch?.[1] === 'tv' ? 'tv' as const : 'movie' as const;
+    const mediaType = pathMatch?.[1] === 'tv' ? ('tv' as const) : ('movie' as const);
 
     const jsonld = extractJsonLd(doc);
     if (jsonld) {
