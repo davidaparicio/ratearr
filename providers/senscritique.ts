@@ -7,7 +7,7 @@ const SC_BASE = 'https://www.senscritique.com';
 const SC_UNIVERSE_FILM = 1;
 const SC_UNIVERSE_TV = 4;
 
-interface ScProduct {
+export interface ScProduct {
   id: number;
   title: string;
   year_of_production: number | null;
@@ -33,20 +33,14 @@ async function scQuery<T>(query: string): Promise<T> {
   return json.data;
 }
 
-async function searchSensCritique(
+export function filterAndRankProducts(
+  items: { product: ScProduct | null }[],
   title: string,
   mediaType: 'movie' | 'tv',
   year?: number,
-): Promise<ScProduct | null> {
-  const escaped = title.replace(/"/g, '\\"');
-  const data = await scQuery<{
-    searchAutocomplete: { items: { product: ScProduct | null }[] };
-  }>(
-    `{ searchAutocomplete(keywords: "${escaped}") { items { product { id title year_of_production rating url slug universe } } } }`,
-  );
-
+): ScProduct | null {
   const universe = mediaType === 'tv' ? SC_UNIVERSE_TV : SC_UNIVERSE_FILM;
-  const products = data.searchAutocomplete.items
+  const products = items
     .map((i) => i.product)
     .filter((p): p is ScProduct => p != null && p.universe === universe);
 
@@ -59,6 +53,21 @@ async function searchSensCritique(
   });
 
   return ranked[0].item;
+}
+
+async function searchSensCritique(
+  title: string,
+  mediaType: 'movie' | 'tv',
+  year?: number,
+): Promise<ScProduct | null> {
+  const escaped = title.replace(/"/g, '\\"');
+  const data = await scQuery<{
+    searchAutocomplete: { items: { product: ScProduct | null }[] };
+  }>(
+    `{ searchAutocomplete(keywords: "${escaped}") { items { product { id title year_of_production rating url slug universe } } } }`,
+  );
+
+  return filterAndRankProducts(data.searchAutocomplete.items, title, mediaType, year);
 }
 
 async function getProductStats(id: number): Promise<number | undefined> {
