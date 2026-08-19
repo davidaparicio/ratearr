@@ -17,6 +17,8 @@ export const DEFAULT_SETTINGS: Settings = {
     'allocine-spectateurs': true,
     senscritique: true,
     letterboxd: true,
+    telerama: false,
+    'telerama-abonnes': false,
   },
   tmdbApiKey: '',
   omdbApiKey: '',

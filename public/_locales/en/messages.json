@@ -70,6 +70,14 @@
     "message": "Letterboxd",
     "description": "Letterboxd source label"
   },
+  "source_telerama": {
+    "message": "Télérama",
+    "description": "Télérama critic source label"
+  },
+  "source_telerama_abonnes": {
+    "message": "Télérama Abonnés",
+    "description": "Télérama subscriber source label"
+  },
   "popup_didYouMean": {
     "message": "Did you mean?",
     "description": "Header for alternative title suggestions"

@@ -4,6 +4,7 @@ import { allocineProvider } from './allocine';
 import { letterboxdProvider } from './letterboxd';
 import { omdbProvider } from './omdb';
 import { senscritiqueProvider } from './senscritique';
+import { teleramaProvider } from './telerama';
 import { tmdbProvider } from './tmdb';
 import type { RatingProvider } from './types';
 
@@ -13,6 +14,7 @@ const ALL_PROVIDERS: RatingProvider[] = [
   allocineProvider,
   senscritiqueProvider,
   letterboxdProvider,
+  teleramaProvider,
 ];
 
 export function getEnabledProviders(settings: Settings): RatingProvider[] {

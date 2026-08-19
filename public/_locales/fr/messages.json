@@ -56,6 +56,12 @@
   "source_letterboxd": {
     "message": "Letterboxd"
   },
+  "source_telerama": {
+    "message": "Télérama"
+  },
+  "source_telerama_abonnes": {
+    "message": "Télérama Abonnés"
+  },
   "popup_didYouMean": {
     "message": "Vous cherchiez peut-être ?"
   },

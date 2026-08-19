@@ -18,6 +18,7 @@ export default defineConfig({
       'https://www.allocine.fr/*',
       'https://apollo.senscritique.com/*',
       'https://letterboxd.com/*',
+      'https://www.telerama.fr/*',
     ],
     ...(browser === 'firefox' && {
       browser_specific_settings: {

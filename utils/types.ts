@@ -8,9 +8,11 @@ export type SourceId =
   | 'allocine-presse'
   | 'allocine-spectateurs'
   | 'senscritique'
-  | 'letterboxd';
+  | 'letterboxd'
+  | 'telerama'
+  | 'telerama-abonnes';
 
-export type ProviderId = 'tmdb' | 'omdb' | 'allocine' | 'senscritique' | 'letterboxd';
+export type ProviderId = 'tmdb' | 'omdb' | 'allocine' | 'senscritique' | 'letterboxd' | 'telerama';
 
 export interface RatingSourceMeta {
   id: SourceId;

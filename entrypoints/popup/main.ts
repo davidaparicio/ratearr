@@ -15,6 +15,8 @@ const SOURCE_LABELS: Record<string, string> = {
   'allocine-spectateurs': 'source_allocine_spectateurs',
   senscritique: 'source_senscritique',
   letterboxd: 'source_letterboxd',
+  telerama: 'source_telerama',
+  'telerama-abonnes': 'source_telerama_abonnes',
 };
 
 async function init() {
@@ -127,6 +129,9 @@ function renderNotFound(app: HTMLElement) {
 
 function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
   app.innerHTML = '';
+  if (data.results.length > 8) {
+    document.body.style.maxHeight = '950px';
+  }
   app.appendChild(renderHeader(data));
   const agg = renderAggregate(data);
   if (agg) app.appendChild(agg);
