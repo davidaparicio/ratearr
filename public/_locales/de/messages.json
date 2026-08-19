@@ -1,0 +1,128 @@
+{
+  "extName": {
+    "message": "Ratearr"
+  },
+  "extDescription": {
+    "message": "Aggregierte Film- & Serienbewertungen aus mehreren Quellen"
+  },
+  "contextMenu_getRating": {
+    "message": "Filmbewertung für \"%s\" abrufen"
+  },
+  "commandOpenPopup": {
+    "message": "Ratearr-Popup öffnen"
+  },
+  "popup_noTitle": {
+    "message": "Öffne eine Film- oder Serienseite auf IMDb, Allociné oder TMDB — oder markiere einen Titel und klicke rechts auf \"Filmbewertung abrufen\"."
+  },
+  "popup_loading": {
+    "message": "Bewertungen werden geladen…"
+  },
+  "popup_error": {
+    "message": "Bewertungen konnten nicht abgerufen werden. Versuche es erneut."
+  },
+  "popup_notFound": {
+    "message": "Titel nicht auf TMDB gefunden."
+  },
+  "popup_refresh": {
+    "message": "Aktualisieren"
+  },
+  "popup_sources": {
+    "message": "$COUNT$ Quellen",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "source_tmdb": {
+    "message": "TMDB"
+  },
+  "source_imdb": {
+    "message": "IMDb"
+  },
+  "source_rottentomatoes": {
+    "message": "Rotten Tomatoes"
+  },
+  "source_metacritic": {
+    "message": "Metacritic"
+  },
+  "source_allocine_presse": {
+    "message": "Allociné Presse"
+  },
+  "source_allocine_spectateurs": {
+    "message": "Allociné Spectateurs"
+  },
+  "source_senscritique": {
+    "message": "SensCritique"
+  },
+  "source_letterboxd": {
+    "message": "Letterboxd"
+  },
+  "source_telerama": {
+    "message": "Télérama"
+  },
+  "source_telerama_abonnes": {
+    "message": "Télérama Abonnés"
+  },
+  "popup_didYouMean": {
+    "message": "Meintest du?"
+  },
+  "popup_audienceFavorite": {
+    "message": "Das Publikum bewertet höher als die Kritiker auf Allociné"
+  },
+  "err_no_key": {
+    "message": "API-Schlüssel erforderlich"
+  },
+  "err_not_found": {
+    "message": "Nicht gefunden"
+  },
+  "err_network": {
+    "message": "Netzwerkfehler"
+  },
+  "err_parse": {
+    "message": "Analysefehler"
+  },
+  "options_title": {
+    "message": "Ratearr-Einstellungen"
+  },
+  "options_sources": {
+    "message": "Bewertungsquellen"
+  },
+  "options_apiKeys": {
+    "message": "API-Schlüssel"
+  },
+  "options_cache": {
+    "message": "Cache"
+  },
+  "options_cacheTtl": {
+    "message": "Cache-Dauer (Stunden)"
+  },
+  "options_clearCache": {
+    "message": "Cache leeren"
+  },
+  "options_saved": {
+    "message": "Einstellungen gespeichert."
+  },
+  "options_badge": {
+    "message": "Badge-Farben"
+  },
+  "options_badgeGreen": {
+    "message": "Grün ab (/10)"
+  },
+  "options_badgeYellow": {
+    "message": "Gelb ab (/10)"
+  },
+  "options_backup": {
+    "message": "Sicherung"
+  },
+  "options_export": {
+    "message": "Einstellungen exportieren"
+  },
+  "options_import": {
+    "message": "Einstellungen importieren"
+  },
+  "options_importError": {
+    "message": "Ungültige Einstellungsdatei."
+  },
+  "popup_openSettings": {
+    "message": "Einstellungen prüfen"
+  }
+}

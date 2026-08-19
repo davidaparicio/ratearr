@@ -1,0 +1,128 @@
+{
+  "extName": {
+    "message": "Ratearr"
+  },
+  "extDescription": {
+    "message": "Puntuaciones agregadas de cine y series desde varias fuentes"
+  },
+  "contextMenu_getRating": {
+    "message": "Obtener puntuación de \"%s\""
+  },
+  "commandOpenPopup": {
+    "message": "Abrir popup de Ratearr"
+  },
+  "popup_noTitle": {
+    "message": "Abre una página de película o serie en IMDb, Allociné o TMDB, o selecciona un título y haz clic derecho en \"Obtener puntuación\"."
+  },
+  "popup_loading": {
+    "message": "Cargando puntuaciones…"
+  },
+  "popup_error": {
+    "message": "No se pudieron obtener las puntuaciones. Intenta actualizar."
+  },
+  "popup_notFound": {
+    "message": "Título no encontrado en TMDB."
+  },
+  "popup_refresh": {
+    "message": "Actualizar"
+  },
+  "popup_sources": {
+    "message": "$COUNT$ fuentes",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "source_tmdb": {
+    "message": "TMDB"
+  },
+  "source_imdb": {
+    "message": "IMDb"
+  },
+  "source_rottentomatoes": {
+    "message": "Rotten Tomatoes"
+  },
+  "source_metacritic": {
+    "message": "Metacritic"
+  },
+  "source_allocine_presse": {
+    "message": "Allociné Presse"
+  },
+  "source_allocine_spectateurs": {
+    "message": "Allociné Spectateurs"
+  },
+  "source_senscritique": {
+    "message": "SensCritique"
+  },
+  "source_letterboxd": {
+    "message": "Letterboxd"
+  },
+  "source_telerama": {
+    "message": "Télérama"
+  },
+  "source_telerama_abonnes": {
+    "message": "Télérama Abonnés"
+  },
+  "popup_didYouMean": {
+    "message": "¿Querías decir?"
+  },
+  "popup_audienceFavorite": {
+    "message": "El público puntúa más alto que la crítica en Allociné"
+  },
+  "err_no_key": {
+    "message": "Clave API requerida"
+  },
+  "err_not_found": {
+    "message": "No encontrado"
+  },
+  "err_network": {
+    "message": "Error de red"
+  },
+  "err_parse": {
+    "message": "Error de análisis"
+  },
+  "options_title": {
+    "message": "Ajustes de Ratearr"
+  },
+  "options_sources": {
+    "message": "Fuentes de puntuación"
+  },
+  "options_apiKeys": {
+    "message": "Claves API"
+  },
+  "options_cache": {
+    "message": "Caché"
+  },
+  "options_cacheTtl": {
+    "message": "Duración de la caché (horas)"
+  },
+  "options_clearCache": {
+    "message": "Vaciar caché"
+  },
+  "options_saved": {
+    "message": "Ajustes guardados."
+  },
+  "options_badge": {
+    "message": "Colores del badge"
+  },
+  "options_badgeGreen": {
+    "message": "Verde por encima de (/10)"
+  },
+  "options_badgeYellow": {
+    "message": "Amarillo por encima de (/10)"
+  },
+  "options_backup": {
+    "message": "Copia de seguridad"
+  },
+  "options_export": {
+    "message": "Exportar ajustes"
+  },
+  "options_import": {
+    "message": "Importar ajustes"
+  },
+  "options_importError": {
+    "message": "Archivo de ajustes inválido."
+  },
+  "popup_openSettings": {
+    "message": "Ver ajustes"
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "extName": {
+    "message": "Ratearr"
+  },
+  "extDescription": {
+    "message": "Valutazioni aggregate di film e serie da più fonti"
+  },
+  "contextMenu_getRating": {
+    "message": "Ottieni valutazione di \"%s\""
+  },
+  "commandOpenPopup": {
+    "message": "Apri popup Ratearr"
+  },
+  "popup_noTitle": {
+    "message": "Apri una pagina di film o serie su IMDb, Allociné o TMDB — oppure seleziona un titolo e fai clic destro su \"Ottieni valutazione\"."
+  },
+  "popup_loading": {
+    "message": "Caricamento valutazioni…"
+  },
+  "popup_error": {
+    "message": "Impossibile ottenere le valutazioni. Riprova."
+  },
+  "popup_notFound": {
+    "message": "Titolo non trovato su TMDB."
+  },
+  "popup_refresh": {
+    "message": "Aggiorna"
+  },
+  "popup_sources": {
+    "message": "$COUNT$ fonti",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "source_tmdb": {
+    "message": "TMDB"
+  },
+  "source_imdb": {
+    "message": "IMDb"
+  },
+  "source_rottentomatoes": {
+    "message": "Rotten Tomatoes"
+  },
+  "source_metacritic": {
+    "message": "Metacritic"
+  },
+  "source_allocine_presse": {
+    "message": "Allociné Presse"
+  },
+  "source_allocine_spectateurs": {
+    "message": "Allociné Spectateurs"
+  },
+  "source_senscritique": {
+    "message": "SensCritique"
+  },
+  "source_letterboxd": {
+    "message": "Letterboxd"
+  },
+  "source_telerama": {
+    "message": "Télérama"
+  },
+  "source_telerama_abonnes": {
+    "message": "Télérama Abonnés"
+  },
+  "popup_didYouMean": {
+    "message": "Intendevi?"
+  },
+  "popup_audienceFavorite": {
+    "message": "Il pubblico valuta più alto della critica su Allociné"
+  },
+  "err_no_key": {
+    "message": "Chiave API richiesta"
+  },
+  "err_not_found": {
+    "message": "Non trovato"
+  },
+  "err_network": {
+    "message": "Errore di rete"
+  },
+  "err_parse": {
+    "message": "Errore di analisi"
+  },
+  "options_title": {
+    "message": "Impostazioni Ratearr"
+  },
+  "options_sources": {
+    "message": "Fonti di valutazione"
+  },
+  "options_apiKeys": {
+    "message": "Chiavi API"
+  },
+  "options_cache": {
+    "message": "Cache"
+  },
+  "options_cacheTtl": {
+    "message": "Durata della cache (ore)"
+  },
+  "options_clearCache": {
+    "message": "Svuota cache"
+  },
+  "options_saved": {
+    "message": "Impostazioni salvate."
+  },
+  "options_badge": {
+    "message": "Colori del badge"
+  },
+  "options_badgeGreen": {
+    "message": "Verde sopra (/10)"
+  },
+  "options_badgeYellow": {
+    "message": "Giallo sopra (/10)"
+  },
+  "options_backup": {
+    "message": "Backup"
+  },
+  "options_export": {
+    "message": "Esporta impostazioni"
+  },
+  "options_import": {
+    "message": "Importa impostazioni"
+  },
+  "options_importError": {
+    "message": "File di impostazioni non valido."
+  },
+  "popup_openSettings": {
+    "message": "Controlla impostazioni"
+  }
+}
