@@ -2,8 +2,9 @@ import type { RatingProvider } from './types';
 import type { ResolvedTitle, RatingResult } from '../utils/types';
 import { rankByTitleMatch } from '../utils/normalize';
 
+import type { MediaType } from '../utils/types';
+
 const ALLOCINE_BASE = 'https://www.allocine.fr';
-const AUTOCOMPLETE_URL = `${ALLOCINE_BASE}/_/autocomplete/movie`;
 
 interface AllocineRatings {
   presse?: { value: number; count?: number };
@@ -48,8 +49,9 @@ interface AutocompleteResult {
   data?: { year?: string };
 }
 
-async function searchAllocine(title: string, year?: number): Promise<string | null> {
-  const url = new URL(AUTOCOMPLETE_URL);
+async function searchAllocine(title: string, mediaType: MediaType, year?: number): Promise<string | null> {
+  const entityFilter = mediaType === 'tv' ? 'series' : 'movie';
+  const url = new URL(`${ALLOCINE_BASE}/_/autocomplete/${entityFilter}`);
   url.searchParams.set('q', title);
 
   const resp = await fetch(url.toString());
@@ -57,11 +59,11 @@ async function searchAllocine(title: string, year?: number): Promise<string | nu
   const json = await resp.json();
   const results: AutocompleteResult[] = json.results || [];
 
-  const movies = results.filter((r) => r.entity_type === 'movie');
-  if (movies.length === 0) return null;
+  const matches = results.filter((r) => r.entity_type === entityFilter);
+  if (matches.length === 0) return null;
 
   const ranked = rankByTitleMatch(
-    movies,
+    matches,
     title,
     year,
     {
@@ -74,6 +76,9 @@ async function searchAllocine(title: string, year?: number): Promise<string | nu
   const entityId = ranked[0].item.entity_id;
   if (!/^\d+$/.test(entityId)) return null;
 
+  if (mediaType === 'tv') {
+    return `${ALLOCINE_BASE}/series/ficheserie_gen_cserie=${entityId}.html`;
+  }
   return `${ALLOCINE_BASE}/film/fichefilm_gen_cfilm=${entityId}.html`;
 }
 
@@ -88,6 +93,7 @@ export const allocineProvider: RatingProvider = {
   async fetchRatings(resolved: ResolvedTitle): Promise<RatingResult[]> {
     const pageUrl = await searchAllocine(
       resolved.localizedTitle || resolved.title,
+      resolved.mediaType,
       resolved.year,
     );
 

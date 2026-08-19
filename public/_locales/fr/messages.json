@@ -29,6 +29,9 @@
       "count": { "content": "$1" }
     }
   },
+  "popup_openSettings": {
+    "message": "Vérifier les paramètres"
+  },
   "source_tmdb": {
     "message": "TMDB"
   },

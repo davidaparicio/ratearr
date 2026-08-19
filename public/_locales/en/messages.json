@@ -113,5 +113,9 @@
   "options_saved": {
     "message": "Settings saved.",
     "description": "Confirmation after saving"
+  },
+  "popup_openSettings": {
+    "message": "Check settings",
+    "description": "Link to options page shown on error"
   }
 }

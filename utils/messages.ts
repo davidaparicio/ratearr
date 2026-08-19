@@ -1,6 +1,6 @@
 import type { TitleQuery, RatingsPanelData, MediaType } from './types';
 
-export type PanelState = 'idle' | 'loading' | 'ready' | 'no-title';
+export type PanelState = 'idle' | 'loading' | 'ready' | 'no-title' | 'error' | 'not-found';
 
 export type Msg =
   | { kind: 'title-detected'; query: TitleQuery }

@@ -38,11 +38,28 @@ async function init() {
   }
 }
 
+let pollCount = 0;
+const MAX_POLL = 15;
+
 function render(app: HTMLElement, state: PanelState, data: RatingsPanelData | null, tabId: number) {
   if (state === 'loading') {
+    if (pollCount >= MAX_POLL) {
+      renderError(app);
+      return;
+    }
+    pollCount++;
     renderLoading(app);
     clearTimeout(pollTimer!);
     pollTimer = setTimeout(() => init(), 1000);
+    return;
+  }
+  pollCount = 0;
+  if (state === 'error') {
+    renderError(app);
+    return;
+  }
+  if (state === 'not-found') {
+    renderNotFound(app);
     return;
   }
   if (state === 'no-title' || state === 'idle' || !data) {
@@ -71,6 +88,38 @@ function renderLoading(app: HTMLElement) {
   const p = document.createElement('p');
   p.id = 'status';
   p.textContent = t('popup_loading');
+  app.appendChild(p);
+}
+
+function renderError(app: HTMLElement) {
+  app.innerHTML = '';
+  const h = document.createElement('h1');
+  h.textContent = 'Ratearr';
+  app.appendChild(h);
+  const p = document.createElement('p');
+  p.id = 'status';
+  p.className = 'error';
+  p.textContent = t('popup_error');
+  app.appendChild(p);
+  const link = document.createElement('a');
+  link.href = '#';
+  link.className = 'options-link';
+  link.textContent = t('popup_openSettings');
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    browser.runtime.openOptionsPage();
+  });
+  app.appendChild(link);
+}
+
+function renderNotFound(app: HTMLElement) {
+  app.innerHTML = '';
+  const h = document.createElement('h1');
+  h.textContent = 'Ratearr';
+  app.appendChild(h);
+  const p = document.createElement('p');
+  p.id = 'status';
+  p.textContent = t('popup_notFound');
   app.appendChild(p);
 }
 

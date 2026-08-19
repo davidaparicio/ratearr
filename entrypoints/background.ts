@@ -1,6 +1,6 @@
-import type { TitleQuery, RatingsPanelData, RatingResult } from '../utils/types';
+import type { TitleQuery, ResolvedTitle, RatingsPanelData, RatingResult } from '../utils/types';
 import type { Msg } from '../utils/messages';
-import { getSettings } from '../utils/settings';
+import { getSettings, type Settings } from '../utils/settings';
 import { resolveTitle } from '../providers/tmdb';
 import { getEnabledProviders, unavailableResults } from '../providers/registry';
 import { getCached, putCached } from '../utils/cache';
@@ -12,12 +12,13 @@ const PROVIDER_TIMEOUT_MS = 8000;
 const browserAction = browser.action ?? browser.browserAction;
 
 interface TabState {
-  state: 'loading' | 'ready' | 'no-title';
+  state: 'loading' | 'ready' | 'no-title' | 'error' | 'not-found';
   data: RatingsPanelData | null;
 }
 
 const tabStates = new Map<number, TabState>();
 const tabGenerations = new Map<number, number>();
+const inFlightTabs = new Set<number>();
 
 async function fetchFromProviders(
   resolved: ResolvedTitle,
@@ -60,58 +61,63 @@ function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
 async function handleTitleDetected(query: TitleQuery, tabId: number) {
   const gen = (tabGenerations.get(tabId) ?? 0) + 1;
   tabGenerations.set(tabId, gen);
+  inFlightTabs.add(tabId);
 
-  tabStates.set(tabId, { state: 'loading', data: null });
-  updateBadge(tabId, undefined);
-
-  const settings = await getSettings();
-
-  let resolution;
   try {
-    resolution = await resolveTitle(query, settings);
-  } catch (err) {
-    console.warn('Ratearr: resolution failed', err);
-    tabStates.set(tabId, { state: 'no-title', data: null });
+    tabStates.set(tabId, { state: 'loading', data: null });
     updateBadge(tabId, undefined);
-    return;
-  }
-  if (!resolution) {
-    tabStates.set(tabId, { state: 'no-title', data: null });
-    updateBadge(tabId, undefined);
-    return;
-  }
 
-  if (tabGenerations.get(tabId) !== gen) return;
+    const settings = await getSettings();
 
-  const { resolved, alternatives } = resolution;
+    let resolution;
+    try {
+      resolution = await resolveTitle(query, settings);
+    } catch (err) {
+      console.warn('Ratearr: resolution failed', err);
+      tabStates.set(tabId, { state: 'error', data: null });
+      updateBadge(tabId, undefined);
+      return;
+    }
+    if (!resolution) {
+      tabStates.set(tabId, { state: 'not-found', data: null });
+      updateBadge(tabId, undefined);
+      return;
+    }
 
-  const cached = await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
-  if (cached) {
     if (tabGenerations.get(tabId) !== gen) return;
-    const panelData = { ...cached, alternatives, fromCache: true };
+
+    const { resolved, alternatives } = resolution;
+
+    const cached = await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
+    if (cached) {
+      if (tabGenerations.get(tabId) !== gen) return;
+      const panelData = { ...cached, alternatives, fromCache: true };
+      tabStates.set(tabId, { state: 'ready', data: panelData });
+      updateBadge(tabId, panelData.aggregate);
+      return;
+    }
+
+    const allResults = await fetchFromProviders(resolved, settings);
+
+    if (tabGenerations.get(tabId) !== gen) return;
+
+    const agg = aggregate(allResults);
+
+    const panelData: RatingsPanelData = {
+      resolved,
+      results: allResults,
+      aggregate: agg,
+      alternatives,
+      fetchedAt: Date.now(),
+      fromCache: false,
+    };
+
+    await putCached(resolved.mediaType, resolved.tmdbId, panelData);
     tabStates.set(tabId, { state: 'ready', data: panelData });
-    updateBadge(tabId, panelData.aggregate);
-    return;
+    updateBadge(tabId, agg);
+  } finally {
+    inFlightTabs.delete(tabId);
   }
-
-  const allResults = await fetchFromProviders(resolved, settings);
-
-  if (tabGenerations.get(tabId) !== gen) return;
-
-  const agg = aggregate(allResults);
-
-  const panelData: RatingsPanelData = {
-    resolved,
-    results: allResults,
-    aggregate: agg,
-    alternatives,
-    fetchedAt: Date.now(),
-    fromCache: false,
-  };
-
-  await putCached(resolved.mediaType, resolved.tmdbId, panelData);
-  tabStates.set(tabId, { state: 'ready', data: panelData });
-  updateBadge(tabId, agg);
 }
 
 function updateBadge(tabId: number, agg: { value: number } | undefined) {
@@ -144,8 +150,10 @@ export default defineBackground(() => {
       ids: {},
       sourceSite: 'context-menu',
     };
+    browserAction.setBadgeText({ tabId: tab.id, text: '...' });
+    browserAction.setBadgeBackgroundColor({ tabId: tab.id, color: '#6366f1' });
     handleTitleDetected(query, tab.id).catch((err) => console.error('Ratearr: pipeline error', err));
-    browserAction.openPopup?.();
+    try { browserAction.openPopup?.(); } catch { /* not supported */ }
   });
 
   browser.runtime.onMessage.addListener(
@@ -218,5 +226,6 @@ export default defineBackground(() => {
   browser.tabs.onRemoved.addListener((tabId) => {
     tabStates.delete(tabId);
     tabGenerations.delete(tabId);
+    inFlightTabs.delete(tabId);
   });
 });

@@ -30,6 +30,10 @@ h1 {
   font-size: 13px;
 }
 
+#status.error {
+  color: #c0392b;
+}
+
 .panel-header {
   display: flex;
   gap: 10px;
