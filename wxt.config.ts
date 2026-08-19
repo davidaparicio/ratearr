@@ -16,6 +16,7 @@ export default defineConfig({
       'https://api.themoviedb.org/*',
       'https://www.omdbapi.com/*',
       'https://www.allocine.fr/*',
+      'https://apollo.senscritique.com/*',
     ],
     ...(browser === 'firefox' && {
       browser_specific_settings: {

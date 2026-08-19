@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
     metacritic: true,
     'allocine-presse': true,
     'allocine-spectateurs': true,
+    senscritique: true,
   },
   tmdbApiKey: '',
   omdbApiKey: '',

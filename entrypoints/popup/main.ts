@@ -13,6 +13,7 @@ const SOURCE_LABELS: Record<string, string> = {
   metacritic: 'source_metacritic',
   'allocine-presse': 'source_allocine_presse',
   'allocine-spectateurs': 'source_allocine_spectateurs',
+  senscritique: 'source_senscritique',
 };
 
 async function init() {

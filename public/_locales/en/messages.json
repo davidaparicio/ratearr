@@ -62,6 +62,10 @@
     "message": "Allociné Spectateurs",
     "description": "Allociné audience source label"
   },
+  "source_senscritique": {
+    "message": "SensCritique",
+    "description": "SensCritique source label"
+  },
   "popup_didYouMean": {
     "message": "Did you mean?",
     "description": "Header for alternative title suggestions"
