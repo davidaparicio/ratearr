@@ -11,6 +11,10 @@
     "message": "Get movie rating for \"%s\"",
     "description": "Context menu item shown on text selection"
   },
+  "commandOpenPopup": {
+    "message": "Open Ratearr popup",
+    "description": "Keyboard shortcut description"
+  },
   "popup_noTitle": {
     "message": "Open a movie or TV page on IMDb, Allociné, or TMDB — or select a title and right-click \"Get movie rating\".",
     "description": "Shown when no title is detected"

@@ -8,6 +8,9 @@
   "contextMenu_getRating": {
     "message": "Obtenir la note du film « %s »"
   },
+  "commandOpenPopup": {
+    "message": "Ouvrir le popup Ratearr"
+  },
   "popup_noTitle": {
     "message": "Ouvrez une page de film ou série sur IMDb, Allociné ou TMDB — ou sélectionnez un titre et faites clic droit « Obtenir la note du film »."
   },

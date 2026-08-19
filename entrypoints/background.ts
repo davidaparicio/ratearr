@@ -20,6 +20,7 @@ interface TabState {
 const tabStates = new Map<number, TabState>();
 const tabGenerations = new Map<number, number>();
 const inFlightTabs = new Set<number>();
+const inFlightProviders = new Map<string, Promise<RatingResult[]>>();
 
 async function fetchFromProviders(
   resolved: ResolvedTitle,
@@ -104,7 +105,20 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
       return;
     }
 
-    const allResults = await fetchFromProviders(resolved, settings);
+    const providerKey = `${resolved.mediaType}:${resolved.tmdbId}`;
+    let allResults: RatingResult[];
+    const existing = inFlightProviders.get(providerKey);
+    if (existing) {
+      allResults = await existing;
+    } else {
+      const promise = fetchFromProviders(resolved, settings);
+      inFlightProviders.set(providerKey, promise);
+      try {
+        allResults = await promise;
+      } finally {
+        inFlightProviders.delete(providerKey);
+      }
+    }
 
     if (tabGenerations.get(tabId) !== gen) return;
 

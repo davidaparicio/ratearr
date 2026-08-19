@@ -20,6 +20,12 @@ export default defineConfig({
       'https://letterboxd.com/*',
       'https://www.telerama.fr/*',
     ],
+    commands: {
+      [browser === 'firefox' ? '_execute_browser_action' : '_execute_action']: {
+        suggested_key: { default: 'Alt+R', mac: 'Alt+R' },
+        description: '__MSG_commandOpenPopup__',
+      },
+    },
     ...(browser === 'firefox' && {
       browser_specific_settings: {
         gecko: {
