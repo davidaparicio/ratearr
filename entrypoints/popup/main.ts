@@ -363,15 +363,22 @@ function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement):
 
   const sendBtn = document.createElement('button');
   sendBtn.textContent = t('popup_send');
-  sendBtn.addEventListener('click', () => {
+  sendBtn.addEventListener('click', async () => {
     const year = data.resolved.year ? ` (${data.resolved.year})` : '';
     const score = data.aggregate ? `${data.aggregate.value.toFixed(1)}/10` : '';
     const body = t('popup_sendMessage')
       .replace('$TITLE$', `${data.resolved.title}${year}`)
       .replace('$SCORE$', score);
-    const subject = `${data.resolved.title}${year} — ${score}`;
-    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    browser.tabs.create({ url: mailto });
+    console.log('[Ratearr] Share clicked, navigator.share:', typeof navigator.share);
+    try {
+      await navigator.share({ text: body });
+      console.log('[Ratearr] navigator.share succeeded');
+    } catch (err) {
+      console.log('[Ratearr] navigator.share failed:', err, '— falling back to mailto:');
+      const subject = `${data.resolved.title}${year} — ${score}`;
+      const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      browser.tabs.create({ url: mailto });
+    }
   });
   actions.appendChild(sendBtn);
 
