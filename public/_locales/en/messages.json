@@ -86,6 +86,14 @@
     "message": "Copy",
     "description": "Copy ratings summary to clipboard"
   },
+  "popup_send": {
+    "message": "Share",
+    "description": "Share via OS share sheet"
+  },
+  "popup_sendMessage": {
+    "message": "Hey! I found a movie to watch together: $TITLE$. Ratearr told me $SCORE$. It looks awesome. Go?! 🍿\nhttps://www.ratearr.com",
+    "description": "Message sent via share sheet"
+  },
   "popup_didYouMean": {
     "message": "Did you mean?",
     "description": "Header for alternative title suggestions"

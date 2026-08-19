@@ -65,6 +65,12 @@
   "popup_share": {
     "message": "Kopieren"
   },
+  "popup_send": {
+    "message": "Teilen"
+  },
+  "popup_sendMessage": {
+    "message": "Hey! Ich hab einen Film zum Zusammenschauen gefunden: $TITLE$. Ratearr gibt ihm $SCORE$. Sieht super aus. Los?! 🍿\nhttps://www.ratearr.com"
+  },
   "popup_didYouMean": {
     "message": "Meintest du?"
   },
