@@ -31,8 +31,8 @@ export const imdbDetector: SiteDetector = {
       const match = ogTitle.content.match(/^(.+?)\s*\((\d{4})\)/);
       if (match) {
         return {
-          title: match[1].replace(/\s*-\s*IMDb\s*$/i, '').trim(),
-          year: parseInt(match[2], 10),
+          title: match[1]!.replace(/\s*-\s*IMDb\s*$/i, '').trim(),
+          year: parseInt(match[2]!, 10),
           ids: { imdb: imdbId },
           sourceSite: url.hostname,
         };

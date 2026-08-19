@@ -25,7 +25,7 @@ export function parseJsonLdRating(html: string, pageUrl: string): LbRating | nul
   if (!match) return null;
 
   try {
-    const data = JSON.parse(match[1]);
+    const data = JSON.parse(match[1]!);
     const agg = data.aggregateRating;
     if (!agg || typeof agg.ratingValue !== 'number') return null;
 
@@ -54,7 +54,7 @@ async function fetchLetterboxdRating(title: string, year?: number): Promise<LbRa
     const yearMatch = html.match(/<meta\s+name="twitter:data2"\s+content="([^"]+)"/);
     if (yearMatch) return rating;
     const releaseDateMatch = html.match(/"dateCreated"\s*:\s*"(\d{4})/);
-    if (releaseDateMatch && Math.abs(parseInt(releaseDateMatch[1], 10) - year) > 1) {
+    if (releaseDateMatch && Math.abs(parseInt(releaseDateMatch[1]!, 10) - year) > 1) {
       return null;
     }
   }

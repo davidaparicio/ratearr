@@ -20,13 +20,13 @@ export function parseAllocineHtml(html: string, pageUrl: string): AllocineRating
   for (const block of ratingBlocks) {
     const noteMatch = block.match(/stareval-note[^>]*>([^<]+)/);
     if (!noteMatch) continue;
-    const rawScore = noteMatch[1].trim();
+    const rawScore = noteMatch[1]!.trim();
     if (rawScore === '--' || rawScore === '') continue;
     const value = parseFloat(rawScore.replace(',', '.'));
     if (Number.isNaN(value)) continue;
 
     const countMatch = block.match(/stareval-review[^>]*>\s*(\d[\d\s]*)\s*(?:notes|critiques)/i);
-    const count = countMatch ? parseInt(countMatch[1].replace(/\s/g, ''), 10) : undefined;
+    const count = countMatch ? parseInt(countMatch[1]!.replace(/\s/g, ''), 10) : undefined;
 
     if (/Presse\s/i.test(block)) {
       result.presse = { value, count };
@@ -70,7 +70,7 @@ async function searchAllocine(
     getYear: (r) => (r.data?.year ? parseInt(r.data.year, 10) : undefined),
   });
 
-  const entityId = ranked[0].item.entity_id;
+  const entityId = ranked[0]!.item.entity_id;
   if (!/^\d+$/.test(entityId)) return null;
 
   if (mediaType === 'tv') {

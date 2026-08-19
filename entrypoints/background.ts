@@ -1,3 +1,4 @@
+import type { Browser } from 'wxt/browser';
 import { getEnabledProviders, unavailableResults } from '../providers/registry';
 import { resolveTitle } from '../providers/tmdb';
 import { aggregate } from '../utils/aggregate';
@@ -37,11 +38,11 @@ async function fetchFromProviders(
   );
 
   for (let i = 0; i < settled.length; i++) {
-    const outcome = settled[i];
+    const outcome = settled[i]!;
     if (outcome.status === 'fulfilled') {
       allResults.push(...outcome.value);
     } else {
-      allResults.push(...unavailableResults(providers[i], 'err_network'));
+      allResults.push(...unavailableResults(providers[i]!, 'err_network'));
     }
   }
 
@@ -169,7 +170,7 @@ export default defineBackground(() => {
   });
 
   browser.runtime.onMessage.addListener(
-    (message: unknown, sender: browser.Runtime.MessageSender) => {
+    (message: unknown, sender: Browser.runtime.MessageSender) => {
       const msg = message as Record<string, unknown>;
       if (!msg || typeof msg.kind !== 'string') return undefined;
 

@@ -1,5 +1,5 @@
 export function t(key: string, substitutions?: string | string[]): string {
-  return browser.i18n.getMessage(key, substitutions) || key;
+  return browser.i18n.getMessage(key as never, substitutions) || key;
 }
 
 export function applyI18n(root: ParentNode): void {

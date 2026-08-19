@@ -52,7 +52,7 @@ export function filterAndRankProducts(
     getYear: (p) => p.year_of_production ?? undefined,
   });
 
-  return ranked[0].item;
+  return ranked[0]!.item;
 }
 
 async function searchSensCritique(

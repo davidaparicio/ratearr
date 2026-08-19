@@ -31,7 +31,7 @@ export const allocineDetector: SiteDetector = {
     if (ogTitle?.content) {
       const match = ogTitle.content.match(/^(.+?)\s*-\s*(?:Film|Série)/);
       return {
-        title: match ? match[1].trim() : ogTitle.content.trim(),
+        title: match ? match[1]!.trim() : ogTitle.content.trim(),
         ids: { allocine: allocineId },
         sourceSite: url.hostname,
       };

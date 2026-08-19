@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { clearCache, getCached, putCached } from '../utils/cache';
-import type { RatingsPanelData } from '../utils/types';
+import type { CacheEntry, RatingsPanelData } from '../utils/types';
+
+interface CacheIndex {
+  entries: { key: string; fetchedAt: number }[];
+}
 
 function makePanelData(title: string, fetchedAt?: number): RatingsPanelData {
   return {
@@ -60,13 +64,14 @@ describe('cache', () => {
 
       const key = 'cache:v1:movie:tmdb:42';
       const stored = await browser.storage.local.get(key);
-      expect(stored[key]).toBeDefined();
-      expect(stored[key].data.resolved.title).toBe('Inception');
+      const entry = stored[key] as CacheEntry;
+      expect(entry).toBeDefined();
+      expect(entry.data.resolved.title).toBe('Inception');
 
       const indexStored = await browser.storage.local.get('cache:index');
-      const index = indexStored['cache:index'];
+      const index = indexStored['cache:index'] as CacheIndex;
       expect(index.entries).toHaveLength(1);
-      expect(index.entries[0].key).toBe(key);
+      expect(index.entries[0]!.key).toBe(key);
     });
 
     it('deduplicates index entries on update', async () => {
@@ -74,7 +79,7 @@ describe('cache', () => {
       await putCached('movie', 42, makePanelData('v2'));
 
       const indexStored = await browser.storage.local.get('cache:index');
-      const index = indexStored['cache:index'];
+      const index = indexStored['cache:index'] as CacheIndex;
       expect(index.entries).toHaveLength(1);
     });
 
@@ -83,7 +88,7 @@ describe('cache', () => {
       await putCached('tv', 42, makePanelData('TV Show'));
 
       const indexStored = await browser.storage.local.get('cache:index');
-      const index = indexStored['cache:index'];
+      const index = indexStored['cache:index'] as CacheIndex;
       expect(index.entries).toHaveLength(2);
 
       const movieResult = await getCached('movie', 42, 24);
@@ -120,10 +125,10 @@ describe('cache', () => {
       await Promise.all(promises);
 
       const indexStored = await browser.storage.local.get('cache:index');
-      const index = indexStored['cache:index'];
+      const index = indexStored['cache:index'] as CacheIndex;
       expect(index.entries).toHaveLength(10);
 
-      const keys = new Set(index.entries.map((e: { key: string }) => e.key));
+      const keys = new Set(index.entries.map((e) => e.key));
       expect(keys.size).toBe(10);
     });
   });

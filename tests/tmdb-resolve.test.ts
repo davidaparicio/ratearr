@@ -14,6 +14,8 @@ const settings: Settings = {
     metacritic: true,
     'allocine-presse': true,
     'allocine-spectateurs': true,
+    senscritique: true,
+    letterboxd: true,
   },
   tmdbApiKey: 'test-key',
   omdbApiKey: '',
