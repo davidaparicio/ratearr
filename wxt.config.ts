@@ -25,10 +25,7 @@ export default defineConfig({
           id: 'ratearr@davidaparicio.fr',
           strict_min_version: '121.0',
           data_collection_permissions: {
-            required: false,
-            disclosure: {
-              data_categories: ['technical', 'interaction'],
-            },
+            required: [],
           },
         },
       },

@@ -25,7 +25,8 @@ export function parseJsonLdRating(html: string, pageUrl: string): LbRating | nul
   if (!match) return null;
 
   try {
-    const data = JSON.parse(match[1]!);
+    const raw = match[1]!.replace(/\/\*\s*<!\[CDATA\[\s*\*\//g, '').replace(/\/\*\s*\]\]>\s*\*\//g, '').trim();
+    const data = JSON.parse(raw);
     const agg = data.aggregateRating;
     if (!agg || typeof agg.ratingValue !== 'number') return null;
 
