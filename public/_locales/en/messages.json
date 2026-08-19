@@ -92,7 +92,11 @@
   },
   "popup_sendMessage": {
     "message": "Hey! I found a movie to watch together: $TITLE$. Ratearr told me $SCORE$. It looks awesome. Go?! 🍿\nhttps://www.ratearr.com",
-    "description": "Message sent via share sheet"
+    "description": "Message sent via share sheet",
+    "placeholders": {
+      "title": { "content": "$1" },
+      "score": { "content": "$2" }
+    }
   },
   "popup_didYouMean": {
     "message": "Did you mean?",

@@ -365,14 +365,13 @@ function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement):
   sendBtn.textContent = t('popup_send');
   sendBtn.addEventListener('click', async () => {
     const year = data.resolved.year ? ` (${data.resolved.year})` : '';
+    const titleWithYear = `${data.resolved.title}${year}`;
     const score = data.aggregate ? `${data.aggregate.value.toFixed(1)}/10` : '';
-    const body = t('popup_sendMessage')
-      .replace('$TITLE$', `${data.resolved.title}${year}`)
-      .replace('$SCORE$', score);
+    const body = t('popup_sendMessage', [titleWithYear, score]);
     try {
       await navigator.share({ text: body });
     } catch {
-      const subject = `${data.resolved.title}${year} — ${score}`;
+      const subject = `${titleWithYear} — ${score}`;
       const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       browser.tabs.create({ url: mailto });
     }

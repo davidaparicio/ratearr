@@ -69,7 +69,11 @@
     "message": "Teilen"
   },
   "popup_sendMessage": {
-    "message": "Hey! Ich hab einen Film zum Zusammenschauen gefunden: $TITLE$. Ratearr gibt ihm $SCORE$. Sieht super aus. Los?! 🍿\nhttps://www.ratearr.com"
+    "message": "Hey! Ich hab einen Film zum Zusammenschauen gefunden: $TITLE$. Ratearr gibt ihm $SCORE$. Sieht super aus. Los?! 🍿\nhttps://www.ratearr.com",
+    "placeholders": {
+      "title": { "content": "$1" },
+      "score": { "content": "$2" }
+    }
   },
   "popup_didYouMean": {
     "message": "Meintest du?"

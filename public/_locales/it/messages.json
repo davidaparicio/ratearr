@@ -69,7 +69,11 @@
     "message": "Condividi"
   },
   "popup_sendMessage": {
-    "message": "Hey! Ho trovato un film da vedere insieme: $TITLE$. Ratearr gli dà $SCORE$. Sembra fantastico. Ci stai?! 🍿\nhttps://www.ratearr.com"
+    "message": "Hey! Ho trovato un film da vedere insieme: $TITLE$. Ratearr gli dà $SCORE$. Sembra fantastico. Ci stai?! 🍿\nhttps://www.ratearr.com",
+    "placeholders": {
+      "title": { "content": "$1" },
+      "score": { "content": "$2" }
+    }
   },
   "popup_didYouMean": {
     "message": "Intendevi?"
