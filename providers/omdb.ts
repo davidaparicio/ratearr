@@ -39,7 +39,7 @@ const SOURCE_EXTRACTORS: SourceExtractor[] = [
       const entry = data.Ratings?.find((r) => r.Source === 'Rotten Tomatoes');
       if (!entry) return null;
       const match = entry.Value.match(/^(\d+)%$/);
-      return match ? { value: parseInt(match[1], 10), scale: 100 } : null;
+      return match ? { value: parseInt(match[1]!, 10), scale: 100 } : null;
     },
   },
   {
@@ -48,7 +48,7 @@ const SOURCE_EXTRACTORS: SourceExtractor[] = [
       const entry = data.Ratings?.find((r) => r.Source === 'Metacritic');
       if (!entry) return null;
       const match = entry.Value.match(/^(\d+)\/100$/);
-      return match ? { value: parseInt(match[1], 10), scale: 100 } : null;
+      return match ? { value: parseInt(match[1]!, 10), scale: 100 } : null;
     },
   },
 ];

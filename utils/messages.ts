@@ -1,3 +1,4 @@
+import type { Browser } from 'wxt/browser';
 import type { MediaType, RatingsPanelData, TitleQuery } from './types';
 
 export type PanelState = 'idle' | 'loading' | 'ready' | 'no-title' | 'error' | 'not-found';
@@ -16,11 +17,11 @@ export function sendToBackground(msg: Msg): Promise<Msg> {
 export function onMessage(
   handler: (
     msg: Msg,
-    sender: browser.Runtime.MessageSender,
+    sender: Browser.runtime.MessageSender,
   ) => Promise<Msg | undefined> | undefined,
 ): void {
   browser.runtime.onMessage.addListener(
-    (message: unknown, sender: browser.Runtime.MessageSender) => {
+    (message: unknown, sender: Browser.runtime.MessageSender) => {
       const msg = message as Msg;
       const result = handler(msg, sender);
       if (result instanceof Promise) return result;

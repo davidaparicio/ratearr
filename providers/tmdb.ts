@@ -46,7 +46,7 @@ export interface ResolutionResult {
 function parseYear(dateStr?: string): number | undefined {
   if (!dateStr) return undefined;
   const match = dateStr.match(/^(\d{4})/);
-  return match ? parseInt(match[1], 10) : undefined;
+  return match ? parseInt(match[1]!, 10) : undefined;
 }
 
 async function resolveByTmdbId(query: TitleQuery, settings: Settings): Promise<ResolutionResult> {
@@ -138,7 +138,7 @@ async function resolveByTitleSearch(
     return (b.item.popularity || 0) - (a.item.popularity || 0);
   });
 
-  const best = ranked[0];
+  const best = ranked[0]!;
   if (best.score === 0 && !best.yearMatch) return null;
 
   const chosen = best.item;

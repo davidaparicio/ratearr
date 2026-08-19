@@ -12,7 +12,7 @@ export const tmdbSiteDetector: SiteDetector = {
 
   extract(doc: Document, url: URL) {
     const pathMatch = url.pathname.match(TMDB_PATH_REGEX);
-    const tmdbId = pathMatch ? parseInt(pathMatch[2], 10) : undefined;
+    const tmdbId = pathMatch ? parseInt(pathMatch[2]!, 10) : undefined;
     const mediaType = pathMatch?.[1] === 'tv' ? ('tv' as const) : ('movie' as const);
 
     const jsonld = extractJsonLd(doc);
@@ -31,8 +31,8 @@ export const tmdbSiteDetector: SiteDetector = {
     if (ogTitle?.content && tmdbId) {
       const match = ogTitle.content.match(/^(.+?)\s*\((\d{4})\)/);
       return {
-        title: match ? match[1].trim() : ogTitle.content.replace(/\s*—.*$/, '').trim(),
-        year: match ? parseInt(match[2], 10) : undefined,
+        title: match ? match[1]!.trim() : ogTitle.content.replace(/\s*—.*$/, '').trim(),
+        year: match ? parseInt(match[2]!, 10) : undefined,
         mediaType,
         ids: { tmdb: tmdbId },
         sourceSite: url.hostname,
