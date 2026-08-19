@@ -1,6 +1,7 @@
 import { clearCache } from '../../utils/cache';
 import { applyI18n, t } from '../../utils/i18n';
 import { DEFAULT_SETTINGS, getSettings, type Settings, saveSettings } from '../../utils/settings';
+import { applyTheme } from '../../utils/theme';
 import type { SourceId } from '../../utils/types';
 
 const SOURCE_IDS: { id: SourceId; labelKey: string }[] = [
@@ -26,6 +27,27 @@ async function init() {
   const title = document.createElement('h1');
   title.textContent = t('options_title');
   app.appendChild(title);
+
+  // Theme section
+  const themeSection = createSection(t('options_theme'));
+  const themeRow = document.createElement('div');
+  themeRow.className = 'option-row';
+  const themeLabel = document.createElement('label');
+  themeLabel.htmlFor = 'theme-select';
+  themeLabel.textContent = t('options_themeLabel');
+  themeRow.appendChild(themeLabel);
+  const themeSelect = document.createElement('select');
+  themeSelect.id = 'theme-select';
+  for (const val of ['auto', 'light', 'dark'] as const) {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = t(`options_theme_${val}`);
+    opt.selected = settings.theme === val;
+    themeSelect.appendChild(opt);
+  }
+  themeRow.appendChild(themeSelect);
+  themeSection.appendChild(themeRow);
+  app.appendChild(themeSection);
 
   // Sources section
   const sourcesSection = createSection(t('options_sources'));
@@ -195,6 +217,7 @@ async function init() {
   saveBtn.addEventListener('click', async () => {
     const newSettings: Partial<Settings> = {
       enabledSources: { ...DEFAULT_SETTINGS.enabledSources },
+      theme: themeSelect.value as Settings['theme'],
       cacheTtlHours: Math.min(168, Math.max(1, parseInt(ttlInput.value, 10) || 24)),
     };
 
@@ -264,4 +287,5 @@ function createKeyInput(label: string, value: string, id: string, signupUrl: str
 }
 
 applyI18n(document);
+applyTheme();
 init();

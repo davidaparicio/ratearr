@@ -1,5 +1,6 @@
 import { applyI18n, t } from '../../utils/i18n';
 import type { Msg, PanelState } from '../../utils/messages';
+import { applyTheme } from '../../utils/theme';
 import type { RatingResult, RatingsPanelData } from '../../utils/types';
 
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -396,4 +397,5 @@ function formatCount(n: number): string {
 }
 
 applyI18n(document);
+applyTheme();
 init();

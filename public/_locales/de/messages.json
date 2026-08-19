@@ -104,6 +104,21 @@
   "options_saved": {
     "message": "Einstellungen gespeichert."
   },
+  "options_theme": {
+    "message": "Erscheinungsbild"
+  },
+  "options_themeLabel": {
+    "message": "Thema"
+  },
+  "options_theme_auto": {
+    "message": "Auto (Browser folgen)"
+  },
+  "options_theme_light": {
+    "message": "Hell"
+  },
+  "options_theme_dark": {
+    "message": "Dunkel"
+  },
   "options_badge": {
     "message": "Badge-Farben"
   },

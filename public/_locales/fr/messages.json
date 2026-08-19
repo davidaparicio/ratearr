@@ -107,6 +107,21 @@
   "options_saved": {
     "message": "Paramètres enregistrés."
   },
+  "options_theme": {
+    "message": "Apparence"
+  },
+  "options_themeLabel": {
+    "message": "Thème"
+  },
+  "options_theme_auto": {
+    "message": "Auto (suivre le navigateur)"
+  },
+  "options_theme_light": {
+    "message": "Clair"
+  },
+  "options_theme_dark": {
+    "message": "Sombre"
+  },
   "options_badge": {
     "message": "Couleurs du badge"
   },

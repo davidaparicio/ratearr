@@ -138,6 +138,26 @@
     "message": "Settings saved.",
     "description": "Confirmation after saving"
   },
+  "options_theme": {
+    "message": "Appearance",
+    "description": "Theme section header"
+  },
+  "options_themeLabel": {
+    "message": "Theme",
+    "description": "Theme selector label"
+  },
+  "options_theme_auto": {
+    "message": "Auto (follow browser)",
+    "description": "Auto theme option"
+  },
+  "options_theme_light": {
+    "message": "Light",
+    "description": "Light theme option"
+  },
+  "options_theme_dark": {
+    "message": "Dark",
+    "description": "Dark theme option"
+  },
   "options_badge": {
     "message": "Badge Colors",
     "description": "Badge threshold section header"
