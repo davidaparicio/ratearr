@@ -14,6 +14,7 @@ const SOURCE_LABELS: Record<string, string> = {
   'allocine-presse': 'source_allocine_presse',
   'allocine-spectateurs': 'source_allocine_spectateurs',
   senscritique: 'source_senscritique',
+  letterboxd: 'source_letterboxd',
 };
 
 async function init() {

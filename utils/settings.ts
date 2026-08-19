@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
     'allocine-presse': true,
     'allocine-spectateurs': true,
     senscritique: true,
+    letterboxd: true,
   },
   tmdbApiKey: '',
   omdbApiKey: '',

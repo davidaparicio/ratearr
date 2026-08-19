@@ -7,9 +7,10 @@ export type SourceId =
   | 'metacritic'
   | 'allocine-presse'
   | 'allocine-spectateurs'
-  | 'senscritique';
+  | 'senscritique'
+  | 'letterboxd';
 
-export type ProviderId = 'tmdb' | 'omdb' | 'allocine' | 'senscritique';
+export type ProviderId = 'tmdb' | 'omdb' | 'allocine' | 'senscritique' | 'letterboxd';
 
 export interface RatingSourceMeta {
   id: SourceId;

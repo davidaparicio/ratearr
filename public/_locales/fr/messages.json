@@ -53,6 +53,9 @@
   "source_senscritique": {
     "message": "SensCritique"
   },
+  "source_letterboxd": {
+    "message": "Letterboxd"
+  },
   "popup_didYouMean": {
     "message": "Vous cherchiez peut-être ?"
   },
