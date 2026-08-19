@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getDetector } from '../detectors/registry';
-import { imdbDetector } from '../detectors/imdb';
-import { tmdbSiteDetector } from '../detectors/tmdb-site';
 import { allocineDetector } from '../detectors/allocine';
+import { imdbDetector } from '../detectors/imdb';
+import { getDetector } from '../detectors/registry';
+import { tmdbSiteDetector } from '../detectors/tmdb-site';
 
 describe('getDetector', () => {
   it('returns IMDb detector for www.imdb.com', () => {
@@ -36,7 +36,9 @@ describe('imdbDetector.matches', () => {
   });
 
   it('matches a title page with extra path segments', () => {
-    expect(imdbDetector.matches(new URL('https://www.imdb.com/title/tt1375666/reviews'))).toBe(true);
+    expect(imdbDetector.matches(new URL('https://www.imdb.com/title/tt1375666/reviews'))).toBe(
+      true,
+    );
   });
 
   it('does not match the homepage', () => {
@@ -54,11 +56,15 @@ describe('imdbDetector.matches', () => {
 
 describe('tmdbSiteDetector.matches', () => {
   it('matches a movie page', () => {
-    expect(tmdbSiteDetector.matches(new URL('https://www.themoviedb.org/movie/27205-inception'))).toBe(true);
+    expect(
+      tmdbSiteDetector.matches(new URL('https://www.themoviedb.org/movie/27205-inception')),
+    ).toBe(true);
   });
 
   it('matches a TV page', () => {
-    expect(tmdbSiteDetector.matches(new URL('https://www.themoviedb.org/tv/1396-breaking-bad'))).toBe(true);
+    expect(
+      tmdbSiteDetector.matches(new URL('https://www.themoviedb.org/tv/1396-breaking-bad')),
+    ).toBe(true);
   });
 
   it('matches a movie page with numeric-only path', () => {
@@ -76,15 +82,25 @@ describe('tmdbSiteDetector.matches', () => {
 
 describe('allocineDetector.matches', () => {
   it('matches a film page', () => {
-    expect(allocineDetector.matches(new URL('https://www.allocine.fr/film/fichefilm_gen_cfilm=143692.html'))).toBe(true);
+    expect(
+      allocineDetector.matches(
+        new URL('https://www.allocine.fr/film/fichefilm_gen_cfilm=143692.html'),
+      ),
+    ).toBe(true);
   });
 
   it('matches a series page', () => {
-    expect(allocineDetector.matches(new URL('https://www.allocine.fr/series/ficheserie_gen_cserie=7882.html'))).toBe(true);
+    expect(
+      allocineDetector.matches(
+        new URL('https://www.allocine.fr/series/ficheserie_gen_cserie=7882.html'),
+      ),
+    ).toBe(true);
   });
 
   it('matches a film slug path', () => {
-    expect(allocineDetector.matches(new URL('https://www.allocine.fr/film/fichefilm-143692/casting/'))).toBe(true);
+    expect(
+      allocineDetector.matches(new URL('https://www.allocine.fr/film/fichefilm-143692/casting/')),
+    ).toBe(true);
   });
 
   it('does not match the homepage', () => {
@@ -92,6 +108,10 @@ describe('allocineDetector.matches', () => {
   });
 
   it('does not match a news page', () => {
-    expect(allocineDetector.matches(new URL('https://www.allocine.fr/article/fichearticle_gen_carticle=123.html'))).toBe(false);
+    expect(
+      allocineDetector.matches(
+        new URL('https://www.allocine.fr/article/fichearticle_gen_carticle=123.html'),
+      ),
+    ).toBe(false);
   });
 });

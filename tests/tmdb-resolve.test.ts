@@ -84,7 +84,7 @@ describe('resolveTitle — "L\'Agent secret" disambiguation', () => {
     const result = await resolveTitle(query, settings);
     expect(result).not.toBeNull();
 
-    const allIds = [result?.resolved.tmdbId, ...result?.alternatives.map((a) => a.tmdbId)];
+    const allIds = [result!.resolved.tmdbId, ...result!.alternatives.map((a) => a.tmdbId)];
     const uniqueIds = new Set(allIds);
     expect(allIds.length).toBe(uniqueIds.size);
   });

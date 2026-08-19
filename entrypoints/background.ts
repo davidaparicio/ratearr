@@ -75,7 +75,7 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
 
     const settings = await getSettings();
 
-    let resolution;
+    let resolution: Awaited<ReturnType<typeof resolveTitle>> | undefined;
     try {
       resolution = await resolveTitle(query, settings);
     } catch (err) {

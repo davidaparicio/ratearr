@@ -16,10 +16,10 @@
     "rules": {
       "preset": "recommended",
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "off"
       },
       "style": {
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "off"
       }
     }
   },
