@@ -65,9 +65,24 @@ export interface RatingsPanelData {
   resolved: ResolvedTitle;
   results: RatingResult[];
   aggregate?: { value: number; scale: 10; sourcesUsed: number };
+  watchProviders?: WatchProviderData;
   alternatives?: TitleCandidate[];
   fetchedAt: number;
   fromCache: boolean;
+}
+
+export interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+}
+
+export interface WatchProviderData {
+  link: string;
+  flatrate?: WatchProvider[];
+  rent?: WatchProvider[];
+  buy?: WatchProvider[];
+  country: string;
 }
 
 export interface CacheEntry {

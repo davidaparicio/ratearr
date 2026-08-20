@@ -6,6 +6,7 @@ import type {
   ResolvedTitle,
   TitleCandidate,
   TitleQuery,
+  WatchProviderData,
 } from '../utils/types';
 import type { RatingProvider } from './types';
 
@@ -180,6 +181,40 @@ export async function resolveTitle(
   if (query.ids.tmdb) return resolveByTmdbId(query, settings);
   if (query.ids.imdb) return resolveByImdbId(query, settings);
   return resolveByTitleSearch(query, settings);
+}
+
+function detectCountry(): string {
+  const lang = navigator.language || 'en-US';
+  const parts = lang.split('-');
+  return (parts[1] || parts[0] || 'US').toUpperCase();
+}
+
+export async function fetchWatchProviders(
+  resolved: ResolvedTitle,
+  settings: Settings,
+): Promise<WatchProviderData | undefined> {
+  try {
+    const endpoint =
+      resolved.mediaType === 'tv'
+        ? `/tv/${resolved.tmdbId}/watch/providers`
+        : `/movie/${resolved.tmdbId}/watch/providers`;
+    const data = await tmdbFetch(endpoint, {}, settings);
+    const country = detectCountry();
+    const countryData = data.results?.[country] || data.results?.US;
+    if (!countryData) return undefined;
+    const hasProviders =
+      countryData.flatrate?.length || countryData.rent?.length || countryData.buy?.length;
+    if (!hasProviders) return undefined;
+    return {
+      link: countryData.link,
+      flatrate: countryData.flatrate,
+      rent: countryData.rent,
+      buy: countryData.buy,
+      country: data.results?.[country] ? country : 'US',
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 export function parseTmdbDetail(data: any): RatingResult {

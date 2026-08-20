@@ -75,6 +75,24 @@
       "score": { "content": "$2" }
     }
   },
+  "popup_whereToWatch": {
+    "message": "Wo ansehen"
+  },
+  "popup_seeAll": {
+    "message": "Alle anzeigen"
+  },
+  "popup_wp_stream": {
+    "message": "Stream"
+  },
+  "popup_wp_rent": {
+    "message": "Leihen"
+  },
+  "popup_wp_buy": {
+    "message": "Kaufen"
+  },
+  "popup_wp_justwatch": {
+    "message": "Daten von JustWatch"
+  },
   "popup_didYouMean": {
     "message": "Meintest du?"
   },

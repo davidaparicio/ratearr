@@ -98,6 +98,30 @@
       "score": { "content": "$2" }
     }
   },
+  "popup_whereToWatch": {
+    "message": "Where to watch",
+    "description": "Header for streaming providers section"
+  },
+  "popup_seeAll": {
+    "message": "See all",
+    "description": "Link to full watch providers list on TMDB"
+  },
+  "popup_wp_stream": {
+    "message": "Stream",
+    "description": "Streaming/flatrate providers label"
+  },
+  "popup_wp_rent": {
+    "message": "Rent",
+    "description": "Rent providers label"
+  },
+  "popup_wp_buy": {
+    "message": "Buy",
+    "description": "Buy providers label"
+  },
+  "popup_wp_justwatch": {
+    "message": "Data by JustWatch",
+    "description": "Attribution for watch provider data"
+  },
   "popup_didYouMean": {
     "message": "Did you mean?",
     "description": "Header for alternative title suggestions"

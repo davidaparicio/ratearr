@@ -1,9 +1,10 @@
 import { applyI18n, t } from '../../utils/i18n';
 import type { Msg, PanelState } from '../../utils/messages';
 import { applyTheme } from '../../utils/theme';
-import type { RatingResult, RatingsPanelData } from '../../utils/types';
+import type { RatingResult, RatingsPanelData, WatchProviderData } from '../../utils/types';
 
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w92';
+const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w45';
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -139,6 +140,8 @@ function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
   app.appendChild(renderRatingsList(data));
   const insight = renderInsight(data);
   if (insight) app.appendChild(insight);
+  const watch = renderWatchProviders(data.watchProviders);
+  if (watch) app.appendChild(watch);
   const alts = renderAlternatives(data, tabId, app);
   if (alts) app.appendChild(alts);
   app.appendChild(renderActions(data, tabId, app));
@@ -282,6 +285,82 @@ function renderInsight(data: RatingsPanelData): HTMLElement | null {
     return el;
   }
   return null;
+}
+
+function renderWatchProviders(wp: WatchProviderData | undefined): HTMLElement | null {
+  if (!wp) return null;
+
+  const section = document.createElement('div');
+  section.className = 'watch-providers';
+
+  const header = document.createElement('div');
+  header.className = 'wp-header';
+  const headerText = document.createElement('span');
+  headerText.textContent = t('popup_whereToWatch');
+  header.appendChild(headerText);
+
+  if (wp.link) {
+    const allLink = document.createElement('a');
+    allLink.href = wp.link;
+    allLink.target = '_blank';
+    allLink.rel = 'noopener';
+    allLink.className = 'wp-all-link';
+    allLink.textContent = t('popup_seeAll');
+    header.appendChild(allLink);
+  }
+  section.appendChild(header);
+
+  if (wp.flatrate?.length) {
+    section.appendChild(renderProviderRow(t('popup_wp_stream'), wp.flatrate));
+  }
+  if (wp.rent?.length) {
+    section.appendChild(renderProviderRow(t('popup_wp_rent'), wp.rent));
+  }
+  if (wp.buy?.length) {
+    section.appendChild(renderProviderRow(t('popup_wp_buy'), wp.buy));
+  }
+
+  const attribution = document.createElement('div');
+  attribution.className = 'wp-attribution';
+  attribution.textContent = t('popup_wp_justwatch');
+  section.appendChild(attribution);
+
+  return section;
+}
+
+function renderProviderRow(
+  label: string,
+  providers: { provider_name: string; logo_path: string }[],
+): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'wp-row';
+
+  const labelEl = document.createElement('span');
+  labelEl.className = 'wp-label';
+  labelEl.textContent = label;
+  row.appendChild(labelEl);
+
+  const logos = document.createElement('div');
+  logos.className = 'wp-logos';
+  for (const p of providers.slice(0, 6)) {
+    const img = document.createElement('img');
+    img.src = `${TMDB_LOGO_BASE}${p.logo_path}`;
+    img.alt = p.provider_name;
+    img.title = p.provider_name;
+    img.className = 'wp-logo';
+    img.width = 24;
+    img.height = 24;
+    logos.appendChild(img);
+  }
+  if (providers.length > 6) {
+    const more = document.createElement('span');
+    more.className = 'wp-more';
+    more.textContent = `+${providers.length - 6}`;
+    logos.appendChild(more);
+  }
+  row.appendChild(logos);
+
+  return row;
 }
 
 function renderAlternatives(

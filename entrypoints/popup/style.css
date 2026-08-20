@@ -225,6 +225,74 @@ h1 {
   margin-bottom: 8px;
 }
 
+.watch-providers {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.wp-all-link {
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.wp-all-link:hover {
+  text-decoration: underline;
+}
+
+.wp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.wp-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.wp-logos {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.wp-logo {
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.wp-more {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.wp-attribution {
+  font-size: 9px;
+  color: var(--text-faintest);
+  margin-top: 4px;
+}
+
 .alternatives {
   margin-bottom: 8px;
   padding-bottom: 6px;

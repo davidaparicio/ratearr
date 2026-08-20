@@ -1,6 +1,6 @@
 import type { Browser } from 'wxt/browser';
 import { getEnabledProviders, unavailableResults } from '../providers/registry';
-import { resolveTitle } from '../providers/tmdb';
+import { fetchWatchProviders, resolveTitle } from '../providers/tmdb';
 import { aggregate } from '../utils/aggregate';
 import { getCached, putCached } from '../utils/cache';
 import type { Msg } from '../utils/messages';
@@ -124,10 +124,18 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
 
     const agg = aggregate(allResults, settings.sourceWeights);
 
+    let watchProviders: Awaited<ReturnType<typeof fetchWatchProviders>> | undefined;
+    try {
+      watchProviders = await fetchWatchProviders(resolved, settings);
+    } catch {
+      // non-critical
+    }
+
     const panelData: RatingsPanelData = {
       resolved,
       results: allResults,
       aggregate: agg,
+      watchProviders,
       alternatives,
       fetchedAt: Date.now(),
       fromCache: false,
