@@ -75,6 +75,21 @@
       "score": { "content": "$2" }
     }
   },
+  "popup_criticsVsAudience": {
+    "message": "Críticos vs. Público"
+  },
+  "popup_critics": {
+    "message": "Críticos"
+  },
+  "popup_audience": {
+    "message": "Público"
+  },
+  "popup_audienceHigher": {
+    "message": "El público puntúa más alto que los críticos"
+  },
+  "popup_criticsHigher": {
+    "message": "Los críticos puntúan más alto que el público"
+  },
   "popup_whereToWatch": {
     "message": "Dónde ver"
   },

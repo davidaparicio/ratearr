@@ -98,6 +98,26 @@
       "score": { "content": "$2" }
     }
   },
+  "popup_criticsVsAudience": {
+    "message": "Critics vs. Audience",
+    "description": "Header for critics vs audience comparison"
+  },
+  "popup_critics": {
+    "message": "Critics",
+    "description": "Critics label in comparison view"
+  },
+  "popup_audience": {
+    "message": "Audience",
+    "description": "Audience label in comparison view"
+  },
+  "popup_audienceHigher": {
+    "message": "Audience rates higher than critics",
+    "description": "Verdict when audience average exceeds critics"
+  },
+  "popup_criticsHigher": {
+    "message": "Critics rate higher than audience",
+    "description": "Verdict when critics average exceeds audience"
+  },
   "popup_whereToWatch": {
     "message": "Where to watch",
     "description": "Header for streaming providers section"

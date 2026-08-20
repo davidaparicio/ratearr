@@ -138,6 +138,8 @@ function renderPanel(app: HTMLElement, data: RatingsPanelData, tabId: number) {
   const agg = renderAggregate(data);
   if (agg) app.appendChild(agg);
   app.appendChild(renderRatingsList(data));
+  const comparison = renderCriticsVsAudience(data);
+  if (comparison) app.appendChild(comparison);
   const insight = renderInsight(data);
   if (insight) app.appendChild(insight);
   const watch = renderWatchProviders(data.watchProviders);
@@ -265,6 +267,103 @@ function renderUnavailableRatingRow(
   }
 
   return row;
+}
+
+const CRITIC_SOURCES: Set<string> = new Set([
+  'rottentomatoes',
+  'metacritic',
+  'allocine-presse',
+  'telerama',
+  'telerama-abonnes',
+]);
+
+const AUDIENCE_SOURCES: Set<string> = new Set([
+  'imdb',
+  'tmdb',
+  'allocine-spectateurs',
+  'senscritique',
+  'letterboxd',
+]);
+
+function renderCriticsVsAudience(data: RatingsPanelData): HTMLElement | null {
+  const critics: number[] = [];
+  const audience: number[] = [];
+
+  for (const r of data.results) {
+    if (r.status !== 'ok') continue;
+    const normalized = (r.rating.value / r.rating.scale) * 10;
+    if (CRITIC_SOURCES.has(r.rating.source)) critics.push(normalized);
+    else if (AUDIENCE_SOURCES.has(r.rating.source)) audience.push(normalized);
+  }
+
+  if (critics.length === 0 || audience.length === 0) return null;
+
+  const criticAvg = Math.round((critics.reduce((a, b) => a + b, 0) / critics.length) * 10) / 10;
+  const audienceAvg =
+    Math.round((audience.reduce((a, b) => a + b, 0) / audience.length) * 10) / 10;
+
+  const section = document.createElement('div');
+  section.className = 'comparison';
+
+  const header = document.createElement('div');
+  header.className = 'cmp-header';
+  header.textContent = t('popup_criticsVsAudience');
+  section.appendChild(header);
+
+  const bar = document.createElement('div');
+  bar.className = 'cmp-bar';
+
+  const criticSide = document.createElement('div');
+  criticSide.className = 'cmp-side cmp-critics';
+  const criticScore = document.createElement('span');
+  criticScore.className = 'cmp-score';
+  criticScore.textContent = criticAvg.toFixed(1);
+  const criticLabel = document.createElement('span');
+  criticLabel.className = 'cmp-label';
+  criticLabel.textContent = t('popup_critics');
+  criticSide.appendChild(criticScore);
+  criticSide.appendChild(criticLabel);
+
+  const audienceSide = document.createElement('div');
+  audienceSide.className = 'cmp-side cmp-audience';
+  const audienceScore = document.createElement('span');
+  audienceScore.className = 'cmp-score';
+  audienceScore.textContent = audienceAvg.toFixed(1);
+  const audienceLabel = document.createElement('span');
+  audienceLabel.className = 'cmp-label';
+  audienceLabel.textContent = t('popup_audience');
+  audienceSide.appendChild(audienceScore);
+  audienceSide.appendChild(audienceLabel);
+
+  const gauge = document.createElement('div');
+  gauge.className = 'cmp-gauge';
+  const criticFill = document.createElement('div');
+  criticFill.className = 'cmp-fill cmp-fill-critics';
+  criticFill.style.width = `${criticAvg * 10}%`;
+  const audienceFill = document.createElement('div');
+  audienceFill.className = 'cmp-fill cmp-fill-audience';
+  audienceFill.style.width = `${audienceAvg * 10}%`;
+  gauge.appendChild(criticFill);
+  gauge.appendChild(audienceFill);
+
+  bar.appendChild(criticSide);
+  bar.appendChild(gauge);
+  bar.appendChild(audienceSide);
+  section.appendChild(bar);
+
+  const diff = Math.abs(criticAvg - audienceAvg);
+  if (diff >= 1.0) {
+    const verdict = document.createElement('div');
+    verdict.className = 'cmp-verdict';
+    if (audienceAvg > criticAvg) {
+      verdict.textContent = t('popup_audienceHigher');
+    } else {
+      verdict.textContent = t('popup_criticsHigher');
+    }
+    section.appendChild(verdict);
+  }
+
+  return section;
 }
 
 function renderInsight(data: RatingsPanelData): HTMLElement | null {
