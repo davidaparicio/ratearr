@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "Aggregated movie & TV ratings from multiple sources",
+    "message": "Your binge-watch companion — aggregated movie & TV ratings from 10 sources in one popup",
     "description": "Extension description"
   },
   "contextMenu_getRating": {

@@ -3,7 +3,7 @@
     "message": "Ratearr"
   },
   "extDescription": {
-    "message": "Puntuaciones agregadas de cine y series desde varias fuentes"
+    "message": "Tu compañero de maratón — puntuaciones de cine y series de 10 fuentes en un popup"
   },
   "contextMenu_getRating": {
     "message": "Obtener puntuación de \"%s\""

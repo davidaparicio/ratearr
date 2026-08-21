@@ -3,7 +3,7 @@
     "message": "Ratearr"
   },
   "extDescription": {
-    "message": "Valutazioni aggregate di film e serie da più fonti"
+    "message": "Il tuo compagno di binge-watch — valutazioni di film e serie da 10 fonti in un popup"
   },
   "contextMenu_getRating": {
     "message": "Ottieni valutazione di \"%s\""
