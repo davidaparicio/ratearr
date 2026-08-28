@@ -55,6 +55,7 @@ export function pickBestFilmHref(hrefs: string[], year?: number): string | null 
       const m = href.match(/(\d{4})/);
       if (m && Math.abs(parseInt(m[1]!, 10) - year) <= 1) return href;
     }
+    return null;
   }
 
   return hrefs[0]!;

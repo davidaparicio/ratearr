@@ -92,8 +92,12 @@ describe('pickBestFilmHref', () => {
     expect(pickBestFilmHref(hrefs, 2022)).toBe(hrefs[1]);
   });
 
-  it('falls back to first when no year matches', () => {
-    expect(pickBestFilmHref(hrefs, 1999)).toBe(hrefs[0]);
+  it('returns null when year provided but no year matches', () => {
+    expect(pickBestFilmHref(hrefs, 1999)).toBeNull();
+  });
+
+  it('falls back to first when no year provided', () => {
+    expect(pickBestFilmHref(hrefs)).toBe(hrefs[0]);
   });
 
   it('returns null for empty list', () => {
