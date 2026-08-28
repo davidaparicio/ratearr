@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   parseAllocineHtml,
+  parseSearchPageEntities,
   pickBestAutocompleteMatch,
   type AutocompleteResult,
 } from '../providers/allocine';
@@ -111,5 +112,34 @@ describe('pickBestAutocompleteMatch', () => {
     ];
     const result = pickBestAutocompleteMatch(results, 'Juste ciel !', 'movie', 2023);
     expect(result).not.toBeNull();
+  });
+});
+
+describe('parseSearchPageEntities', () => {
+  function makeHtml(entities: Record<string, unknown>): string {
+    return `<script>var jsEntities = ${JSON.stringify(entities)}; var foo;</script>`;
+  }
+
+  it('finds movie by title match', () => {
+    const key = btoa('Movie:288851');
+    const html = makeHtml({ [key]: { title: 'Juste ciel !' } });
+    expect(parseSearchPageEntities(html, 'Juste ciel !', 'movie')).toBe('288851');
+  });
+
+  it('returns null for title mismatch', () => {
+    const key = btoa('Movie:100');
+    const html = makeHtml({ [key]: { title: 'Parasite' } });
+    expect(parseSearchPageEntities(html, 'Juste ciel !', 'movie')).toBeNull();
+  });
+
+  it('filters by media type prefix', () => {
+    const key = btoa('TVSeries:999');
+    const html = makeHtml({ [key]: { title: 'Juste ciel !' } });
+    expect(parseSearchPageEntities(html, 'Juste ciel !', 'movie')).toBeNull();
+    expect(parseSearchPageEntities(html, 'Juste ciel !', 'tv')).toBe('999');
+  });
+
+  it('returns null for missing jsEntities', () => {
+    expect(parseSearchPageEntities('<html></html>', 'Test', 'movie')).toBeNull();
   });
 });
