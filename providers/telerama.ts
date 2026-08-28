@@ -42,28 +42,31 @@ export function parseSubscriberRating(html: string): { value: number; count?: nu
   return { value, count };
 }
 
+export function extractFilmHrefs(html: string): string[] {
+  return [...html.matchAll(/href="(\/cinema\/films\/[^"]+)"/g)].map((m) => m[1]!);
+}
+
+export function pickBestFilmHref(hrefs: string[], year?: number): string | null {
+  if (hrefs.length === 0) return null;
+
+  if (year) {
+    for (const href of hrefs) {
+      const m = href.match(/(\d{4})/);
+      if (m && Math.abs(parseInt(m[1]!, 10) - year) <= 1) return href;
+    }
+  }
+
+  return hrefs[0]!;
+}
+
 async function findFilmUrl(title: string, year?: number): Promise<string | null> {
   const url = `${TLR_SEARCH}?q=${encodeURIComponent(title)}`;
   const resp = await fetch(url, { credentials: 'include' });
   if (!resp.ok) return null;
 
   const html = await resp.text();
-
-  if (year) {
-    const allMatches = [...html.matchAll(/href="(\/cinema\/films\/[^"]+)"/g)];
-    for (const m of allMatches) {
-      const href = m[1]!;
-      const yearMatch = href.match(/(\d{4})/);
-      if (yearMatch && Math.abs(parseInt(yearMatch[1]!, 10) - year) <= 1) {
-        return `${TLR_BASE}${href}`;
-      }
-    }
-    if (allMatches.length > 0) return `${TLR_BASE}${allMatches[0]![1]}`;
-    return null;
-  }
-
-  const match = html.match(/href="(\/cinema\/films\/[^"]+)"/);
-  return match ? `${TLR_BASE}${match[1]}` : null;
+  const href = pickBestFilmHref(extractFilmHrefs(html), year);
+  return href ? `${TLR_BASE}${href}` : null;
 }
 
 async function fetchTeleramaRatings(title: string, year?: number): Promise<TeleramaRatings | null> {

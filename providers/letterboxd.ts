@@ -51,6 +51,18 @@ export function extractYear(html: string): number | undefined {
   return undefined;
 }
 
+export function isYearMatch(pageYear: number | undefined, targetYear: number | undefined): boolean {
+  if (!targetYear || !pageYear) return true;
+  return Math.abs(pageYear - targetYear) <= 1;
+}
+
+export function buildSlugCandidates(title: string, year?: number): string[] {
+  const slug = titleToSlug(title);
+  if (!slug) return [];
+  if (year) return [slug, `${slug}-${year}`];
+  return [slug];
+}
+
 async function trySlug(slug: string, year?: number): Promise<LbRating | null> {
   const pageUrl = `${LB_BASE}/film/${slug}/`;
   const resp = await fetch(pageUrl);
@@ -60,25 +72,16 @@ async function trySlug(slug: string, year?: number): Promise<LbRating | null> {
   const rating = parseJsonLdRating(html, pageUrl);
   if (!rating) return null;
 
-  if (year) {
-    const pageYear = extractYear(html);
-    if (pageYear && Math.abs(pageYear - year) > 1) return null;
-  }
+  if (!isYearMatch(extractYear(html), year)) return null;
 
   return rating;
 }
 
 async function fetchLetterboxdRating(title: string, year?: number): Promise<LbRating | null> {
-  const slug = titleToSlug(title);
-  if (!slug) return null;
-
-  const rating = await trySlug(slug, year);
-  if (rating) return rating;
-
-  if (year) {
-    return trySlug(`${slug}-${year}`, year);
+  for (const slug of buildSlugCandidates(title, year)) {
+    const rating = await trySlug(slug, year);
+    if (rating) return rating;
   }
-
   return null;
 }
 

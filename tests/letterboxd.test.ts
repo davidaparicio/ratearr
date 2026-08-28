@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseJsonLdRating, titleToSlug, extractYear } from '../providers/letterboxd';
+import {
+  buildSlugCandidates,
+  extractYear,
+  isYearMatch,
+  parseJsonLdRating,
+  titleToSlug,
+} from '../providers/letterboxd';
 
 const fixture = readFileSync(resolve(__dirname, 'fixtures/letterboxd-inception.html'), 'utf-8');
 
@@ -84,5 +90,47 @@ describe('extractYear', () => {
 
   it('returns undefined when no year found', () => {
     expect(extractYear('<html></html>')).toBeUndefined();
+  });
+});
+
+describe('isYearMatch', () => {
+  it('accepts when no target year', () => {
+    expect(isYearMatch(2015, undefined)).toBe(true);
+  });
+
+  it('accepts when no page year', () => {
+    expect(isYearMatch(undefined, 2023)).toBe(true);
+  });
+
+  it('accepts exact match', () => {
+    expect(isYearMatch(2023, 2023)).toBe(true);
+  });
+
+  it('accepts ±1 year', () => {
+    expect(isYearMatch(2022, 2023)).toBe(true);
+    expect(isYearMatch(2024, 2023)).toBe(true);
+  });
+
+  it('rejects when difference > 1', () => {
+    expect(isYearMatch(2015, 2023)).toBe(false);
+    expect(isYearMatch(2020, 2023)).toBe(false);
+  });
+});
+
+describe('buildSlugCandidates', () => {
+  it('returns bare slug when no year', () => {
+    expect(buildSlugCandidates('Oh My Goodness!')).toEqual(['oh-my-goodness']);
+  });
+
+  it('returns bare slug then year-suffixed slug when year given', () => {
+    expect(buildSlugCandidates('Oh My Goodness!', 2023)).toEqual([
+      'oh-my-goodness',
+      'oh-my-goodness-2023',
+    ]);
+  });
+
+  it('returns empty for empty title', () => {
+    expect(buildSlugCandidates('')).toEqual([]);
+    expect(buildSlugCandidates('', 2023)).toEqual([]);
   });
 });
