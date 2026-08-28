@@ -98,11 +98,15 @@ export const senscritiqueProvider: RatingProvider = {
   },
 
   async fetchRatings(resolved: ResolvedTitle): Promise<RatingResult[]> {
-    const product = await searchSensCritique(
-      resolved.localizedTitle || resolved.title,
-      resolved.mediaType,
-      resolved.year,
-    );
+    const titlesToTry = resolved.localizedTitle
+      ? [resolved.localizedTitle, resolved.title]
+      : [resolved.title];
+
+    let product: Awaited<ReturnType<typeof searchSensCritique>> = null;
+    for (const t of titlesToTry) {
+      product = await searchSensCritique(t, resolved.mediaType, resolved.year);
+      if (product?.rating != null) break;
+    }
 
     if (!product || product.rating == null) {
       return [{ status: 'unavailable', source: 'senscritique', reasonKey: 'err_not_found' }];

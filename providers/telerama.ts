@@ -107,7 +107,15 @@ export const teleramaProvider: RatingProvider = {
 
   async fetchRatings(resolved: ResolvedTitle): Promise<RatingResult[]> {
     try {
-      const ratings = await fetchTeleramaRatings(resolved.localizedTitle || resolved.title, resolved.year);
+      const titlesToTry = resolved.localizedTitle
+        ? [resolved.localizedTitle, resolved.title]
+        : [resolved.title];
+
+      let ratings: Awaited<ReturnType<typeof fetchTeleramaRatings>> = null;
+      for (const t of titlesToTry) {
+        ratings = await fetchTeleramaRatings(t, resolved.year);
+        if (ratings) break;
+      }
 
       if (!ratings) {
         return this.produces.map((source) => ({

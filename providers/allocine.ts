@@ -109,11 +109,15 @@ export const allocineProvider: RatingProvider = {
   },
 
   async fetchRatings(resolved: ResolvedTitle): Promise<RatingResult[]> {
-    const pageUrl = await searchAllocine(
-      resolved.localizedTitle || resolved.title,
-      resolved.mediaType,
-      resolved.year,
-    );
+    const titlesToTry = resolved.localizedTitle
+      ? [resolved.localizedTitle, resolved.title]
+      : [resolved.title];
+
+    let pageUrl: string | null = null;
+    for (const t of titlesToTry) {
+      pageUrl = await searchAllocine(t, resolved.mediaType, resolved.year);
+      if (pageUrl) break;
+    }
 
     if (!pageUrl) {
       return [
