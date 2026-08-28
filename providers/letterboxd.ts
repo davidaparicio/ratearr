@@ -43,27 +43,43 @@ export function parseJsonLdRating(html: string, pageUrl: string): LbRating | nul
   }
 }
 
-async function fetchLetterboxdRating(title: string, year?: number): Promise<LbRating | null> {
-  const slug = titleToSlug(title);
-  if (!slug) return null;
+export function extractYear(html: string): number | undefined {
+  const twitterMatch = html.match(/<meta\s+name="twitter:data2"\s+content="(\d{4})/);
+  if (twitterMatch) return parseInt(twitterMatch[1]!, 10);
+  const jsonLdMatch = html.match(/"dateCreated"\s*:\s*"(\d{4})/);
+  if (jsonLdMatch) return parseInt(jsonLdMatch[1]!, 10);
+  return undefined;
+}
 
+async function trySlug(slug: string, year?: number): Promise<LbRating | null> {
   const pageUrl = `${LB_BASE}/film/${slug}/`;
   const resp = await fetch(pageUrl);
   if (!resp.ok) return null;
 
   const html = await resp.text();
   const rating = parseJsonLdRating(html, pageUrl);
+  if (!rating) return null;
 
-  if (rating && year) {
-    const yearMatch = html.match(/<meta\s+name="twitter:data2"\s+content="([^"]+)"/);
-    if (yearMatch) return rating;
-    const releaseDateMatch = html.match(/"dateCreated"\s*:\s*"(\d{4})/);
-    if (releaseDateMatch && Math.abs(parseInt(releaseDateMatch[1]!, 10) - year) > 1) {
-      return null;
-    }
+  if (year) {
+    const pageYear = extractYear(html);
+    if (pageYear && Math.abs(pageYear - year) > 1) return null;
   }
 
   return rating;
+}
+
+async function fetchLetterboxdRating(title: string, year?: number): Promise<LbRating | null> {
+  const slug = titleToSlug(title);
+  if (!slug) return null;
+
+  const rating = await trySlug(slug, year);
+  if (rating) return rating;
+
+  if (year) {
+    return trySlug(`${slug}-${year}`, year);
+  }
+
+  return null;
 }
 
 export const letterboxdProvider: RatingProvider = {

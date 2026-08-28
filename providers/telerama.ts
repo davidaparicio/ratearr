@@ -42,18 +42,32 @@ export function parseSubscriberRating(html: string): { value: number; count?: nu
   return { value, count };
 }
 
-async function findFilmUrl(title: string): Promise<string | null> {
+async function findFilmUrl(title: string, year?: number): Promise<string | null> {
   const url = `${TLR_SEARCH}?q=${encodeURIComponent(title)}`;
   const resp = await fetch(url, { credentials: 'include' });
   if (!resp.ok) return null;
 
   const html = await resp.text();
+
+  if (year) {
+    const allMatches = [...html.matchAll(/href="(\/cinema\/films\/[^"]+)"/g)];
+    for (const m of allMatches) {
+      const href = m[1]!;
+      const yearMatch = href.match(/(\d{4})/);
+      if (yearMatch && Math.abs(parseInt(yearMatch[1]!, 10) - year) <= 1) {
+        return `${TLR_BASE}${href}`;
+      }
+    }
+    if (allMatches.length > 0) return `${TLR_BASE}${allMatches[0]![1]}`;
+    return null;
+  }
+
   const match = html.match(/href="(\/cinema\/films\/[^"]+)"/);
   return match ? `${TLR_BASE}${match[1]}` : null;
 }
 
-async function fetchTeleramaRatings(title: string): Promise<TeleramaRatings | null> {
-  const filmUrl = await findFilmUrl(title);
+async function fetchTeleramaRatings(title: string, year?: number): Promise<TeleramaRatings | null> {
+  const filmUrl = await findFilmUrl(title, year);
   if (!filmUrl) return null;
 
   const resp = await fetch(filmUrl, { credentials: 'include' });
@@ -87,7 +101,7 @@ export const teleramaProvider: RatingProvider = {
 
   async fetchRatings(resolved: ResolvedTitle): Promise<RatingResult[]> {
     try {
-      const ratings = await fetchTeleramaRatings(resolved.localizedTitle || resolved.title);
+      const ratings = await fetchTeleramaRatings(resolved.localizedTitle || resolved.title, resolved.year);
 
       if (!ratings) {
         return this.produces.map((source) => ({

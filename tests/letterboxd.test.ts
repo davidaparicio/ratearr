@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseJsonLdRating, titleToSlug } from '../providers/letterboxd';
+import { parseJsonLdRating, titleToSlug, extractYear } from '../providers/letterboxd';
 
 const fixture = readFileSync(resolve(__dirname, 'fixtures/letterboxd-inception.html'), 'utf-8');
 
@@ -63,5 +63,26 @@ describe('parseJsonLdRating', () => {
       '<script type="application/ld+json">{"aggregateRating":{"ratingValue":3.567,"ratingCount":100}}</script>';
     const result = parseJsonLdRating(html, 'https://example.com');
     expect(result!.value).toBe(3.6);
+  });
+});
+
+describe('extractYear', () => {
+  it('extracts year from twitter:data2 meta tag', () => {
+    const html = '<meta name="twitter:data2" content="2023 · 1h 30m">';
+    expect(extractYear(html)).toBe(2023);
+  });
+
+  it('extracts year from JSON-LD dateCreated', () => {
+    const html = '{"dateCreated": "2023-05-12"}';
+    expect(extractYear(html)).toBe(2023);
+  });
+
+  it('prefers twitter:data2 over dateCreated', () => {
+    const html = '<meta name="twitter:data2" content="2023"> {"dateCreated": "2020"}';
+    expect(extractYear(html)).toBe(2023);
+  });
+
+  it('returns undefined when no year found', () => {
+    expect(extractYear('<html></html>')).toBeUndefined();
   });
 });

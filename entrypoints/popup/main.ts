@@ -274,7 +274,6 @@ const CRITIC_SOURCES: Set<string> = new Set([
   'metacritic',
   'allocine-presse',
   'telerama',
-  'telerama-abonnes',
 ]);
 
 const AUDIENCE_SOURCES: Set<string> = new Set([
@@ -283,6 +282,7 @@ const AUDIENCE_SOURCES: Set<string> = new Set([
   'allocine-spectateurs',
   'senscritique',
   'letterboxd',
+  'telerama-abonnes',
 ]);
 
 function renderCriticsVsAudience(data: RatingsPanelData): HTMLElement | null {
