@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { titleSimilarity } from '../utils/normalize';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
 
@@ -47,6 +48,15 @@ export function extractFilmHrefs(html: string): string[] {
   return [...html.matchAll(/href="(\/cinema\/films\/[^"]+)"/g)].map((m) => m[1]!);
 }
 
+export function extractCritiqueHrefs(html: string): string[] {
+  return [...html.matchAll(/href="(\/cinema\/[^"]+_cri-\d+\.php)"/g)].map((m) => m[1]!);
+}
+
+export function slugToTitle(href: string): string {
+  const slug = href.replace(/^\/cinema\/(?:films\/)?/, '').replace(/[_,].*$/, '');
+  return slug.replace(/-/g, ' ');
+}
+
 export function pickBestFilmHref(hrefs: string[], year?: number): string | null {
   if (hrefs.length === 0) return null;
 
@@ -61,16 +71,34 @@ export function pickBestFilmHref(hrefs: string[], year?: number): string | null 
   return hrefs[0]!;
 }
 
+export function pickBestCritiqueHref(hrefs: string[], title: string): string | null {
+  const seen = new Set<string>();
+  for (const href of hrefs) {
+    if (seen.has(href)) continue;
+    seen.add(href);
+    if (titleSimilarity(title, slugToTitle(href)) > 0) return href;
+  }
+  return null;
+}
+
 async function findFilmUrl(title: string, year?: number): Promise<string | null> {
   const url = `${TLR_SEARCH}?q=${encodeURIComponent(title)}`;
   const resp = await fetch(url, { credentials: 'include' });
   if (!resp.ok) return null;
 
   const html = await resp.text();
-  const hrefs = extractFilmHrefs(html);
-  const href = pickBestFilmHref(hrefs, year);
-  dbg('telerama', `search "${title}" → ${hrefs.length} hrefs`, hrefs, `picked:`, href);
-  return href ? `${TLR_BASE}${href}` : null;
+
+  const filmHrefs = extractFilmHrefs(html);
+  const filmHref = pickBestFilmHref(filmHrefs, year);
+  dbg('telerama', `film hrefs: ${filmHrefs.length}`, filmHrefs, `picked:`, filmHref);
+  if (filmHref) return `${TLR_BASE}${filmHref}`;
+
+  const critiqueHrefs = extractCritiqueHrefs(html);
+  const critiqueHref = pickBestCritiqueHref(critiqueHrefs, title);
+  dbg('telerama', `critique hrefs: ${critiqueHrefs.length}, picked:`, critiqueHref);
+  if (critiqueHref) return `${TLR_BASE}${critiqueHref}`;
+
+  return null;
 }
 
 async function fetchTeleramaRatings(title: string, year?: number): Promise<TeleramaRatings | null> {

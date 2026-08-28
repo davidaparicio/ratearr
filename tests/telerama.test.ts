@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  extractCritiqueHrefs,
   extractFilmHrefs,
   parseCriticRating,
   parseSubscriberRating,
+  pickBestCritiqueHref,
   pickBestFilmHref,
+  slugToTitle,
 } from '../providers/telerama';
 
 describe('parseCriticRating', () => {
@@ -102,5 +105,52 @@ describe('pickBestFilmHref', () => {
 
   it('returns null for empty list', () => {
     expect(pickBestFilmHref([], 2023)).toBeNull();
+  });
+});
+
+describe('extractCritiqueHrefs', () => {
+  it('extracts critique hrefs', () => {
+    const html = '<a href="/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php">review</a>';
+    expect(extractCritiqueHrefs(html)).toEqual(['/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php']);
+  });
+
+  it('ignores non-critique cinema hrefs', () => {
+    const html = '<a href="/cinema/films/some-film,123.php">film</a>';
+    expect(extractCritiqueHrefs(html)).toEqual([]);
+  });
+});
+
+describe('slugToTitle', () => {
+  it('converts critique href to title words', () => {
+    expect(slugToTitle('/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php')).toBe('juste ciel juste l enfer 0854');
+  });
+
+  it('converts film href to title words', () => {
+    expect(slugToTitle('/cinema/films/oh-my-god,430904.php')).toBe('oh my god');
+  });
+});
+
+describe('pickBestCritiqueHref', () => {
+  const critiqueHrefs = [
+    '/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php',
+    '/cinema/juste-pour-une-nuit-de-will-gluck_cri-7045405.php',
+    '/cinema/tombe-du-ciel-avec-josiane-balasko_cri-7045391.php',
+  ];
+
+  it('picks href matching the title', () => {
+    expect(pickBestCritiqueHref(critiqueHrefs, 'Juste ciel !')).toBe(critiqueHrefs[0]);
+  });
+
+  it('returns null when no title matches', () => {
+    expect(pickBestCritiqueHref(critiqueHrefs, 'Parasite')).toBeNull();
+  });
+
+  it('returns null for empty list', () => {
+    expect(pickBestCritiqueHref([], 'Juste ciel !')).toBeNull();
+  });
+
+  it('deduplicates hrefs', () => {
+    const dupes = [critiqueHrefs[0]!, critiqueHrefs[0]!];
+    expect(pickBestCritiqueHref(dupes, 'Juste ciel !')).toBe(critiqueHrefs[0]);
   });
 });
