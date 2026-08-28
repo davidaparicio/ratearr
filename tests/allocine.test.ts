@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseAllocineHtml } from '../providers/allocine';
+import {
+  parseAllocineHtml,
+  pickBestAutocompleteMatch,
+  type AutocompleteResult,
+} from '../providers/allocine';
 
 const fixture = readFileSync(resolve(__dirname, 'fixtures/allocine-page.html'), 'utf-8');
 
@@ -51,5 +55,53 @@ describe('parseAllocineHtml', () => {
     expect(result).not.toBeNull();
     expect(result?.spectateurs?.value).toBe(3.2);
     expect(result?.spectateurs?.count).toBe(500);
+  });
+});
+
+describe('pickBestAutocompleteMatch', () => {
+  const unrelatedResults: AutocompleteResult[] = [
+    { entity_type: 'movie', entity_id: '255238', label: 'Parasite', original_label: 'Gisaengchung', data: { year: '2019' } },
+    { entity_type: 'movie', entity_id: '258374', label: 'Joker', original_label: 'Joker', data: { year: '2019' } },
+  ];
+
+  it('returns null when no result matches the title', () => {
+    const result = pickBestAutocompleteMatch(unrelatedResults, 'Juste ciel !', 'movie', 2023);
+    expect(result).toBeNull();
+  });
+
+  it('returns null for empty results', () => {
+    expect(pickBestAutocompleteMatch([], 'Test', 'movie')).toBeNull();
+  });
+
+  it('returns null when entity_type does not match', () => {
+    const result = pickBestAutocompleteMatch(unrelatedResults, 'Parasite', 'series');
+    expect(result).toBeNull();
+  });
+
+  it('picks exact title match', () => {
+    const results: AutocompleteResult[] = [
+      { entity_type: 'movie', entity_id: '288851', label: 'Juste ciel !', data: { year: '2023' } },
+      ...unrelatedResults,
+    ];
+    const result = pickBestAutocompleteMatch(results, 'Juste ciel !', 'movie', 2023);
+    expect(result).not.toBeNull();
+    expect(result!.entity_id).toBe('288851');
+  });
+
+  it('picks by year when title matches multiple', () => {
+    const results: AutocompleteResult[] = [
+      { entity_type: 'movie', entity_id: '100', label: 'Inception', data: { year: '2020' } },
+      { entity_type: 'movie', entity_id: '200', label: 'Inception', data: { year: '2010' } },
+    ];
+    const result = pickBestAutocompleteMatch(results, 'Inception', 'movie', 2010);
+    expect(result!.entity_id).toBe('200');
+  });
+
+  it('accepts year-only match when title partially matches', () => {
+    const results: AutocompleteResult[] = [
+      { entity_type: 'movie', entity_id: '300', label: 'Juste ciel ! Extended', data: { year: '2023' } },
+    ];
+    const result = pickBestAutocompleteMatch(results, 'Juste ciel !', 'movie', 2023);
+    expect(result).not.toBeNull();
   });
 });

@@ -97,4 +97,33 @@ describe('filterAndRankProducts', () => {
     const result = filterAndRankProducts(mixedItems, 'Inception', 'movie', 2010);
     expect(result!.id).toBe(2);
   });
+
+  it('returns null when no result matches the title', () => {
+    const unrelatedItems = [
+      {
+        product: {
+          id: 1,
+          title: 'Parasite',
+          year_of_production: 2019,
+          rating: 8.0,
+          url: '/film/parasite/1',
+          slug: 'parasite',
+          universe: 1,
+        } as ScProduct,
+      },
+      {
+        product: {
+          id: 2,
+          title: 'Joker',
+          year_of_production: 2019,
+          rating: 7.0,
+          url: '/film/joker/2',
+          slug: 'joker',
+          universe: 1,
+        } as ScProduct,
+      },
+    ];
+    const result = filterAndRankProducts(unrelatedItems, 'Juste ciel !', 'movie', 2023);
+    expect(result).toBeNull();
+  });
 });

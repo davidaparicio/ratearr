@@ -37,4 +37,10 @@ describe('titleSimilarity', () => {
   it('returns 0 for no match', () => {
     expect(titleSimilarity('The Matrix', 'Inception')).toBe(0);
   });
+
+  it('returns 0 when either title is empty', () => {
+    expect(titleSimilarity('Inception', '')).toBe(0);
+    expect(titleSimilarity('', 'Inception')).toBe(0);
+    expect(titleSimilarity('', '')).toBe(0);
+  });
 });

@@ -39,12 +39,33 @@ export function parseAllocineHtml(html: string, pageUrl: string): AllocineRating
   return result;
 }
 
-interface AutocompleteResult {
+export interface AutocompleteResult {
   entity_type: string;
   entity_id: string;
   label: string;
   original_label?: string;
   data?: { year?: string };
+}
+
+export function pickBestAutocompleteMatch(
+  results: AutocompleteResult[],
+  title: string,
+  entityFilter: string,
+  year?: number,
+): AutocompleteResult | null {
+  const matches = results.filter((r) => r.entity_type === entityFilter);
+  if (matches.length === 0) return null;
+
+  const ranked = rankByTitleMatch(matches, title, year, {
+    getTitle: (r) => r.label || '',
+    getAltTitle: (r) => r.original_label || '',
+    getYear: (r) => (r.data?.year ? parseInt(r.data.year, 10) : undefined),
+  });
+
+  const best = ranked[0]!;
+  if (best.score === 0 && !best.yearMatch) return null;
+
+  return best.item;
 }
 
 async function searchAllocine(
@@ -61,16 +82,10 @@ async function searchAllocine(
   const json = await resp.json();
   const results: AutocompleteResult[] = json.results || [];
 
-  const matches = results.filter((r) => r.entity_type === entityFilter);
-  if (matches.length === 0) return null;
+  const best = pickBestAutocompleteMatch(results, title, entityFilter, year);
+  if (!best) return null;
 
-  const ranked = rankByTitleMatch(matches, title, year, {
-    getTitle: (r) => r.label || '',
-    getAltTitle: (r) => r.original_label || '',
-    getYear: (r) => (r.data?.year ? parseInt(r.data.year, 10) : undefined),
-  });
-
-  const entityId = ranked[0]!.item.entity_id;
+  const entityId = best.entity_id;
   if (!/^\d+$/.test(entityId)) return null;
 
   if (mediaType === 'tv') {
