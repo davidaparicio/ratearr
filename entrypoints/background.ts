@@ -3,6 +3,7 @@ import { getEnabledProviders, unavailableResults } from '../providers/registry';
 import { fetchWatchProviders, resolveTitle } from '../providers/tmdb';
 import { aggregate } from '../utils/aggregate';
 import { getCached, putCached } from '../utils/cache';
+import { dbg, setDebug } from '../utils/debug';
 import type { Msg } from '../utils/messages';
 import { getSettings, type Settings } from '../utils/settings';
 import type { RatingResult, RatingsPanelData, ResolvedTitle, TitleQuery } from '../utils/types';
@@ -76,6 +77,8 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
     updateBadge(tabId, undefined);
 
     const settings = await getSettings();
+    setDebug(!!settings.debug);
+    dbg('pipeline', 'query', { title: query.title, year: query.year, ids: query.ids, source: query.sourceSite });
 
     let resolution: Awaited<ReturnType<typeof resolveTitle>> | undefined;
     try {
@@ -87,6 +90,7 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
       return;
     }
     if (!resolution) {
+      dbg('pipeline', 'no resolution found');
       tabStates.set(tabId, { state: 'not-found', data: null });
       updateBadge(tabId, undefined);
       return;
@@ -95,6 +99,8 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
     if (tabGenerations.get(tabId) !== gen) return;
 
     const { resolved, alternatives } = resolution;
+    dbg('pipeline', 'resolved', { tmdbId: resolved.tmdbId, imdbId: resolved.imdbId, title: resolved.title, localizedTitle: resolved.localizedTitle, year: resolved.year });
+    if (alternatives.length > 0) dbg('pipeline', 'alternatives', alternatives.map(a => `${a.title} (${a.year}) tmdb:${a.tmdbId}`));
 
     const cached = await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
     if (cached) {

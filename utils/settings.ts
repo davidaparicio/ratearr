@@ -9,6 +9,7 @@ export interface Settings {
   tmdbApiKey: string;
   omdbApiKey: string;
   cacheTtlHours: number;
+  debug?: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

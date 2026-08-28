@@ -1,3 +1,4 @@
+import { dbg } from '../utils/debug';
 import type { Settings } from '../utils/settings';
 import type { Rating, RatingResult, ResolvedTitle, SourceId } from '../utils/types';
 import type { RatingProvider } from './types';
@@ -98,6 +99,7 @@ export const omdbProvider: RatingProvider = {
 
   async fetchRatings(resolved: ResolvedTitle, settings: Settings): Promise<RatingResult[]> {
     if (!resolved.imdbId) {
+      dbg('omdb', 'no imdbId, skipping');
       return this.produces.map((source: SourceId) => ({
         status: 'unavailable' as const,
         source,
@@ -105,6 +107,7 @@ export const omdbProvider: RatingProvider = {
       }));
     }
 
+    dbg('omdb', `fetching ${resolved.imdbId}`);
     const url = new URL(OMDB_BASE);
     url.searchParams.set('i', resolved.imdbId);
     url.searchParams.set('apikey', settings.omdbApiKey);
@@ -112,6 +115,7 @@ export const omdbProvider: RatingProvider = {
     const resp = await fetch(url.toString());
     if (!resp.ok) throw new Error(`omdb_http_${resp.status}`);
     const data: OmdbResponse = await resp.json();
+    dbg('omdb', `response: imdbRating:${data.imdbRating} ratings:${data.Ratings?.map(r => `${r.Source}=${r.Value}`).join(', ')}`);
 
     if (typeof data.Response !== 'string') {
       return this.produces.map((source: SourceId) => ({

@@ -1,3 +1,4 @@
+import { dbg } from '../utils/debug';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
 
@@ -65,7 +66,9 @@ async function findFilmUrl(title: string, year?: number): Promise<string | null>
   if (!resp.ok) return null;
 
   const html = await resp.text();
-  const href = pickBestFilmHref(extractFilmHrefs(html), year);
+  const hrefs = extractFilmHrefs(html);
+  const href = pickBestFilmHref(hrefs, year);
+  dbg('telerama', `search "${title}" → ${hrefs.length} hrefs`, hrefs, `picked:`, href);
   return href ? `${TLR_BASE}${href}` : null;
 }
 

@@ -1,3 +1,4 @@
+import { dbg } from '../utils/debug';
 import { rankByTitleMatch } from '../utils/normalize';
 import type { MediaType, RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
@@ -63,7 +64,7 @@ export function pickBestAutocompleteMatch(
   });
 
   const best = ranked[0]!;
-  if (best.score === 0 && !best.yearMatch) return null;
+  if (best.score === 0) return null;
 
   return best.item;
 }
@@ -81,9 +82,14 @@ async function searchAllocine(
   if (!resp.ok) return null;
   const json = await resp.json();
   const results: AutocompleteResult[] = json.results || [];
+  dbg('allocine', `search "${title}" → ${results.length} results`, results.map(r => `${r.label} (${r.data?.year}) id:${r.entity_id}`));
 
   const best = pickBestAutocompleteMatch(results, title, entityFilter, year);
-  if (!best) return null;
+  if (!best) {
+    dbg('allocine', 'no match above threshold');
+    return null;
+  }
+  dbg('allocine', `picked: "${best.label}" (${best.data?.year}) id:${best.entity_id}`);
 
   const entityId = best.entity_id;
   if (!/^\d+$/.test(entityId)) return null;

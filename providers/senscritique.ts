@@ -1,3 +1,4 @@
+import { dbg } from '../utils/debug';
 import { rankByTitleMatch } from '../utils/normalize';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
@@ -53,7 +54,11 @@ export function filterAndRankProducts(
   });
 
   const best = ranked[0]!;
-  if (best.score === 0 && !best.yearMatch) return null;
+  dbg('senscritique', `search "${title}" → ${products.length} products, best: "${best.item.title}" (${best.item.year_of_production}) score:${best.score} yearMatch:${best.yearMatch}`);
+  if (best.score === 0) {
+    dbg('senscritique', 'no match above threshold');
+    return null;
+  }
 
   return best.item;
 }

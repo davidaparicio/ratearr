@@ -1,3 +1,4 @@
+import { dbg } from '../utils/debug';
 import { rankByTitleMatch } from '../utils/normalize';
 import type { Settings } from '../utils/settings';
 import type {
@@ -127,6 +128,7 @@ async function resolveByTitleSearch(
   if (query.year) baseParams.year = String(query.year);
 
   const results = await fetchBilingualResults(endpoint, baseParams, settings);
+  dbg('tmdb', `search "${query.title}" year:${query.year} → ${results.length} results`, results.map((r: any) => `${r.title || r.name} (${r.release_date || r.first_air_date}) id:${r.id} pop:${r.popularity}`));
   if (results.length === 0) return null;
 
   const ranked = rankByTitleMatch(results, query.title, query.year, {
@@ -140,6 +142,7 @@ async function resolveByTitleSearch(
   });
 
   const best = ranked[0]!;
+  dbg('tmdb', `best: "${best.item.title || best.item.name}" score:${best.score} yearMatch:${best.yearMatch}`);
   if (best.score === 0 && !best.yearMatch) return null;
 
   const chosen = best.item;

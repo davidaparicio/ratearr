@@ -1,3 +1,4 @@
+import { dbg } from '../utils/debug';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
 
@@ -65,14 +66,26 @@ export function buildSlugCandidates(title: string, year?: number): string[] {
 
 async function trySlug(slug: string, year?: number): Promise<LbRating | null> {
   const pageUrl = `${LB_BASE}/film/${slug}/`;
+  dbg('letterboxd', `trying ${pageUrl}`);
   const resp = await fetch(pageUrl);
-  if (!resp.ok) return null;
+  if (!resp.ok) {
+    dbg('letterboxd', `${pageUrl} → HTTP ${resp.status}`);
+    return null;
+  }
 
   const html = await resp.text();
   const rating = parseJsonLdRating(html, pageUrl);
-  if (!rating) return null;
+  if (!rating) {
+    dbg('letterboxd', `${pageUrl} → no JSON-LD rating`);
+    return null;
+  }
 
-  if (!isYearMatch(extractYear(html), year)) return null;
+  const pageYear = extractYear(html);
+  dbg('letterboxd', `${pageUrl} → rating:${rating.value}/5 pageYear:${pageYear} targetYear:${year}`);
+  if (!isYearMatch(pageYear, year)) {
+    dbg('letterboxd', `year mismatch, skipping`);
+    return null;
+  }
 
   return rating;
 }

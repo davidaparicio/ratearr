@@ -69,6 +69,14 @@ describe('pickBestAutocompleteMatch', () => {
     expect(result).toBeNull();
   });
 
+  it('returns null for year-only match with no title similarity', () => {
+    const sameYearResults: AutocompleteResult[] = [
+      { entity_type: 'movie', entity_id: '290065', label: 'Pauvres Créatures', original_label: 'Poor Things', data: { year: '2023' } },
+    ];
+    const result = pickBestAutocompleteMatch(sameYearResults, 'Juste ciel !', 'movie', 2023);
+    expect(result).toBeNull();
+  });
+
   it('returns null for empty results', () => {
     expect(pickBestAutocompleteMatch([], 'Test', 'movie')).toBeNull();
   });
