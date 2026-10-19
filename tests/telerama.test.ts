@@ -78,10 +78,7 @@ describe('extractFilmHrefs', () => {
 });
 
 describe('pickBestFilmHref', () => {
-  const hrefs = [
-    '/cinema/films/juste-ciel-2010,456.php',
-    '/cinema/films/juste-ciel-2023,123.php',
-  ];
+  const hrefs = ['/cinema/films/juste-ciel-2010,456.php', '/cinema/films/juste-ciel-2023,123.php'];
 
   it('returns first href when no year', () => {
     expect(pickBestFilmHref(hrefs)).toBe(hrefs[0]);
@@ -111,7 +108,9 @@ describe('pickBestFilmHref', () => {
 describe('extractCritiqueHrefs', () => {
   it('extracts critique hrefs', () => {
     const html = '<a href="/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php">review</a>';
-    expect(extractCritiqueHrefs(html)).toEqual(['/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php']);
+    expect(extractCritiqueHrefs(html)).toEqual([
+      '/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php',
+    ]);
   });
 
   it('ignores non-critique cinema hrefs', () => {
@@ -122,7 +121,9 @@ describe('extractCritiqueHrefs', () => {
 
 describe('slugToTitle', () => {
   it('converts critique href to title words', () => {
-    expect(slugToTitle('/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php')).toBe('juste ciel juste l enfer 0854');
+    expect(slugToTitle('/cinema/juste-ciel-juste-l-enfer-0854_cri-7023256.php')).toBe(
+      'juste ciel juste l enfer 0854',
+    );
   });
 
   it('converts film href to title words', () => {

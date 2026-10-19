@@ -115,7 +115,10 @@ export const omdbProvider: RatingProvider = {
     const resp = await fetch(url.toString());
     if (!resp.ok) throw new Error(`omdb_http_${resp.status}`);
     const data: OmdbResponse = await resp.json();
-    dbg('omdb', `response: imdbRating:${data.imdbRating} ratings:${data.Ratings?.map(r => `${r.Source}=${r.Value}`).join(', ')}`);
+    dbg(
+      'omdb',
+      `response: imdbRating:${data.imdbRating} ratings:${data.Ratings?.map((r) => `${r.Source}=${r.Value}`).join(', ')}`,
+    );
 
     if (typeof data.Response !== 'string') {
       return this.produces.map((source: SourceId) => ({

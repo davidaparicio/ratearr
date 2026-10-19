@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  type AutocompleteResult,
   parseAllocineHtml,
   parseSearchPageEntities,
   pickBestAutocompleteMatch,
-  type AutocompleteResult,
 } from '../providers/allocine';
 
 const fixture = readFileSync(resolve(__dirname, 'fixtures/allocine-page.html'), 'utf-8');
@@ -61,8 +61,20 @@ describe('parseAllocineHtml', () => {
 
 describe('pickBestAutocompleteMatch', () => {
   const unrelatedResults: AutocompleteResult[] = [
-    { entity_type: 'movie', entity_id: '255238', label: 'Parasite', original_label: 'Gisaengchung', data: { year: '2019' } },
-    { entity_type: 'movie', entity_id: '258374', label: 'Joker', original_label: 'Joker', data: { year: '2019' } },
+    {
+      entity_type: 'movie',
+      entity_id: '255238',
+      label: 'Parasite',
+      original_label: 'Gisaengchung',
+      data: { year: '2019' },
+    },
+    {
+      entity_type: 'movie',
+      entity_id: '258374',
+      label: 'Joker',
+      original_label: 'Joker',
+      data: { year: '2019' },
+    },
   ];
 
   it('returns null when no result matches the title', () => {
@@ -72,7 +84,13 @@ describe('pickBestAutocompleteMatch', () => {
 
   it('returns null for year-only match with no title similarity', () => {
     const sameYearResults: AutocompleteResult[] = [
-      { entity_type: 'movie', entity_id: '290065', label: 'Pauvres Créatures', original_label: 'Poor Things', data: { year: '2023' } },
+      {
+        entity_type: 'movie',
+        entity_id: '290065',
+        label: 'Pauvres Créatures',
+        original_label: 'Poor Things',
+        data: { year: '2023' },
+      },
     ];
     const result = pickBestAutocompleteMatch(sameYearResults, 'Juste ciel !', 'movie', 2023);
     expect(result).toBeNull();
@@ -108,7 +126,12 @@ describe('pickBestAutocompleteMatch', () => {
 
   it('accepts year-only match when title partially matches', () => {
     const results: AutocompleteResult[] = [
-      { entity_type: 'movie', entity_id: '300', label: 'Juste ciel ! Extended', data: { year: '2023' } },
+      {
+        entity_type: 'movie',
+        entity_id: '300',
+        label: 'Juste ciel ! Extended',
+        data: { year: '2023' },
+      },
     ];
     const result = pickBestAutocompleteMatch(results, 'Juste ciel !', 'movie', 2023);
     expect(result).not.toBeNull();

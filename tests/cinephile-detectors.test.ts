@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { letterboxdDetector } from '../detectors/letterboxd';
+import { getDetector } from '../detectors/registry';
 import { senscritiqueDetector } from '../detectors/senscritique';
 import { wikipediaDetector } from '../detectors/wikipedia';
-import { getDetector } from '../detectors/registry';
 
 describe('letterboxdDetector', () => {
   it('matches /film/ URLs', () => {
@@ -23,17 +23,13 @@ describe('letterboxdDetector', () => {
 describe('senscritiqueDetector', () => {
   it('matches /film/ URLs', () => {
     expect(
-      senscritiqueDetector.matches(
-        new URL('https://www.senscritique.com/film/inception/123456'),
-      ),
+      senscritiqueDetector.matches(new URL('https://www.senscritique.com/film/inception/123456')),
     ).toBe(true);
   });
 
   it('matches /serie/ URLs', () => {
     expect(
-      senscritiqueDetector.matches(
-        new URL('https://www.senscritique.com/serie/breaking_bad/789'),
-      ),
+      senscritiqueDetector.matches(new URL('https://www.senscritique.com/serie/breaking_bad/789')),
     ).toBe(true);
   });
 

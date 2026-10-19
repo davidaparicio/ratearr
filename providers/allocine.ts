@@ -89,7 +89,11 @@ async function searchByAutocomplete(
   if (!resp.ok) return null;
   const json = await resp.json();
   const results: AutocompleteResult[] = json.results || [];
-  dbg('allocine', `autocomplete "${title}" → ${results.length} results`, results.map(r => `${r.label} (${r.data?.year}) id:${r.entity_id}`));
+  dbg(
+    'allocine',
+    `autocomplete "${title}" → ${results.length} results`,
+    results.map((r) => `${r.label} (${r.data?.year}) id:${r.entity_id}`),
+  );
 
   const best = pickBestAutocompleteMatch(results, title, entityFilter, year);
   if (!best) {
@@ -137,10 +141,7 @@ export function parseSearchPageEntities(
   return null;
 }
 
-async function searchByPage(
-  title: string,
-  mediaType: MediaType,
-): Promise<string | null> {
+async function searchByPage(title: string, mediaType: MediaType): Promise<string | null> {
   const url = `${ALLOCINE_BASE}/rechercher/?q=${encodeURIComponent(title)}`;
   const resp = await fetch(url);
   if (!resp.ok) return null;

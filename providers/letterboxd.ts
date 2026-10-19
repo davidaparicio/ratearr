@@ -81,7 +81,10 @@ async function trySlug(slug: string, year?: number): Promise<LbRating | null> {
   }
 
   const pageYear = extractYear(html);
-  dbg('letterboxd', `${pageUrl} → rating:${rating.value}/5 pageYear:${pageYear} targetYear:${year}`);
+  dbg(
+    'letterboxd',
+    `${pageUrl} → rating:${rating.value}/5 pageYear:${pageYear} targetYear:${year}`,
+  );
   if (!isYearMatch(pageYear, year)) {
     dbg('letterboxd', `year mismatch, skipping`);
     return null;

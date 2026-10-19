@@ -299,8 +299,7 @@ function renderCriticsVsAudience(data: RatingsPanelData): HTMLElement | null {
   if (critics.length === 0 || audience.length === 0) return null;
 
   const criticAvg = Math.round((critics.reduce((a, b) => a + b, 0) / critics.length) * 10) / 10;
-  const audienceAvg =
-    Math.round((audience.reduce((a, b) => a + b, 0) / audience.length) * 10) / 10;
+  const audienceAvg = Math.round((audience.reduce((a, b) => a + b, 0) / audience.length) * 10) / 10;
 
   const section = document.createElement('div');
   section.className = 'comparison';
