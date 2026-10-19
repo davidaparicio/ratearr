@@ -20,7 +20,13 @@ function isFilmPage(doc: Document): boolean {
 }
 
 export const wikipediaDetector: SiteDetector = {
-  hosts: ['en.wikipedia.org', 'fr.wikipedia.org', 'es.wikipedia.org', 'de.wikipedia.org', 'it.wikipedia.org'],
+  hosts: [
+    'en.wikipedia.org',
+    'fr.wikipedia.org',
+    'es.wikipedia.org',
+    'de.wikipedia.org',
+    'it.wikipedia.org',
+  ],
 
   matches(url: URL): boolean {
     return url.pathname.startsWith('/wiki/');

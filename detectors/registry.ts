@@ -6,8 +6,8 @@ import { netflixDetector } from './netflix';
 import { primeVideoDetector } from './primevideo';
 import { senscritiqueDetector } from './senscritique';
 import { tmdbSiteDetector } from './tmdb-site';
-import { wikipediaDetector } from './wikipedia';
 import type { SiteDetector } from './types';
+import { wikipediaDetector } from './wikipedia';
 
 const ALL_DETECTORS: SiteDetector[] = [
   imdbDetector,

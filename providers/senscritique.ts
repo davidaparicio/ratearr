@@ -54,7 +54,10 @@ export function filterAndRankProducts(
   });
 
   const best = ranked[0]!;
-  dbg('senscritique', `search "${title}" → ${products.length} products, best: "${best.item.title}" (${best.item.year_of_production}) score:${best.score} yearMatch:${best.yearMatch}`);
+  dbg(
+    'senscritique',
+    `search "${title}" → ${products.length} products, best: "${best.item.title}" (${best.item.year_of_production}) score:${best.score} yearMatch:${best.yearMatch}`,
+  );
   if (best.score === 0) {
     dbg('senscritique', 'no match above threshold');
     return null;
