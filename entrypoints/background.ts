@@ -3,10 +3,17 @@ import { getEnabledProviders, unavailableResults } from '../providers/registry';
 import { fetchWatchProviders, resolveTitle } from '../providers/tmdb';
 import { aggregate } from '../utils/aggregate';
 import { getCached, putCached } from '../utils/cache';
+import { buildCandidates } from '../utils/candidates';
 import { dbg, setDebug } from '../utils/debug';
 import type { Msg } from '../utils/messages';
 import { getSettings, type Settings } from '../utils/settings';
-import type { RatingResult, RatingsPanelData, ResolvedTitle, TitleQuery } from '../utils/types';
+import type {
+  RatingResult,
+  RatingsPanelData,
+  ResolvedTitle,
+  TitleCandidate,
+  TitleQuery,
+} from '../utils/types';
 
 const PROVIDER_TIMEOUT_MS = 8000;
 
@@ -67,7 +74,11 @@ function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
   });
 }
 
-async function handleTitleDetected(query: TitleQuery, tabId: number) {
+async function handleTitleDetected(
+  query: TitleQuery,
+  tabId: number,
+  previousCandidates?: TitleCandidate[],
+) {
   const gen = (tabGenerations.get(tabId) ?? 0) + 1;
   tabGenerations.set(tabId, gen);
   inFlightTabs.add(tabId);
@@ -104,6 +115,7 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
     if (tabGenerations.get(tabId) !== gen) return;
 
     const { resolved, alternatives } = resolution;
+    const candidates = buildCandidates(resolved, alternatives, previousCandidates);
     dbg('pipeline', 'resolved', {
       tmdbId: resolved.tmdbId,
       imdbId: resolved.imdbId,
@@ -121,7 +133,7 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
     const cached = await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
     if (cached) {
       if (tabGenerations.get(tabId) !== gen) return;
-      const panelData = { ...cached, alternatives, fromCache: true };
+      const panelData = { ...cached, alternatives, candidates, fromCache: true };
       tabStates.set(tabId, { state: 'ready', data: panelData });
       updateBadge(tabId, panelData.aggregate, settings.badgeGreenMin, settings.badgeYellowMin);
       return;
@@ -159,6 +171,7 @@ async function handleTitleDetected(query: TitleQuery, tabId: number) {
       aggregate: agg,
       watchProviders,
       alternatives,
+      candidates,
       fetchedAt: Date.now(),
       fromCache: false,
     };
@@ -251,6 +264,7 @@ export default defineBackground(() => {
         if (typeof msg.tabId !== 'number' || typeof msg.tmdbId !== 'number') return undefined;
         if (msg.mediaType != null && msg.mediaType !== 'movie' && msg.mediaType !== 'tv')
           return undefined;
+        const previousCandidates = tabStates.get(msg.tabId)?.data?.candidates;
         tabStates.set(msg.tabId, { state: 'loading', data: null });
         const query: TitleQuery = {
           title: '',
@@ -258,7 +272,7 @@ export default defineBackground(() => {
           mediaType: (msg.mediaType as TitleQuery['mediaType']) ?? 'movie',
           sourceSite: 'alternative',
         };
-        handleTitleDetected(query, msg.tabId).catch((err) =>
+        handleTitleDetected(query, msg.tabId, previousCandidates).catch((err) =>
           console.error('Ratearr: pipeline error', err),
         );
         return undefined;
@@ -268,6 +282,7 @@ export default defineBackground(() => {
         if (typeof msg.tabId !== 'number') return undefined;
         const tabState = tabStates.get(msg.tabId);
         if (tabState?.data?.resolved) {
+          const previousCandidates = tabState.data.candidates;
           tabStates.set(msg.tabId, { state: 'loading', data: null });
           const query: TitleQuery = {
             title: tabState.data.resolved.title,
@@ -279,7 +294,7 @@ export default defineBackground(() => {
             },
             sourceSite: 'refresh',
           };
-          handleTitleDetected(query, msg.tabId).catch((err) =>
+          handleTitleDetected(query, msg.tabId, previousCandidates).catch((err) =>
             console.error('Ratearr: pipeline error', err),
           );
         }

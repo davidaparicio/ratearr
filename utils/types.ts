@@ -67,6 +67,8 @@ export interface RatingsPanelData {
   aggregate?: { value: number; scale: 10; sourcesUsed: number };
   watchProviders?: WatchProviderData;
   alternatives?: TitleCandidate[];
+  /** Stable, ordered list including the resolved title, for navigating between suggestions. */
+  candidates?: TitleCandidate[];
   fetchedAt: number;
   fromCache: boolean;
 }

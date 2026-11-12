@@ -399,6 +399,13 @@ h1 {
   color: var(--text-score);
 }
 
+.alt-row.alt-active {
+  background: var(--bg-hover);
+  color: var(--text-score);
+  font-weight: 600;
+  cursor: default;
+}
+
 .alt-poster {
   border-radius: 2px;
   object-fit: cover;

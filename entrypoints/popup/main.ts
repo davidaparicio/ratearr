@@ -466,7 +466,8 @@ function renderAlternatives(
   tabId: number,
   app: HTMLElement,
 ): HTMLElement | null {
-  if (!data.alternatives || data.alternatives.length === 0) return null;
+  const candidates = data.candidates ?? data.alternatives ?? [];
+  if (candidates.length === 0 || (data.candidates && candidates.length < 2)) return null;
 
   const section = document.createElement('div');
   section.className = 'alternatives';
@@ -475,9 +476,15 @@ function renderAlternatives(
   header.textContent = t('popup_didYouMean');
   section.appendChild(header);
 
-  for (const alt of data.alternatives) {
+  for (const alt of candidates) {
+    const isActive =
+      alt.tmdbId === data.resolved.tmdbId && alt.mediaType === data.resolved.mediaType;
     const row = document.createElement('button');
-    row.className = 'alt-row';
+    row.className = isActive ? 'alt-row alt-active' : 'alt-row';
+    if (isActive) {
+      row.disabled = true;
+      row.setAttribute('aria-current', 'true');
+    }
     row.addEventListener('click', () => {
       browser.runtime
         .sendMessage({
