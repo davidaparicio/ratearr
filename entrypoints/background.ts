@@ -216,12 +216,19 @@ function updateBadge(
 }
 
 export default defineBackground(() => {
-  // Context menu: "Get movie rating" on selected text
-  browser.contextMenus.create({
-    id: 'ratearr-lookup',
-    title: browser.i18n.getMessage('contextMenu_getRating'),
-    contexts: ['selection'],
-  });
+  // Context menu: "Get movie rating" on selected text. Chrome keeps menus across
+  // service worker restarts (re-creating throws "duplicate id") while Firefox's
+  // MV2 background page does not, so clear and re-create on every start.
+  browser.contextMenus
+    .removeAll()
+    .then(() =>
+      browser.contextMenus.create({
+        id: 'ratearr-lookup',
+        title: browser.i18n.getMessage('contextMenu_getRating'),
+        contexts: ['selection'],
+      }),
+    )
+    .catch((err) => console.warn('Ratearr: context menu setup failed', err));
 
   browser.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId !== 'ratearr-lookup' || !info.selectionText || !tab?.id) return;
