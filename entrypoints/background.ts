@@ -1,5 +1,5 @@
 import type { Browser } from 'wxt/browser';
-import { getEnabledProviders, unavailableResults } from '../providers/registry';
+import { getEnabledProviders, keepEnabledSources, unavailableResults } from '../providers/registry';
 import { fetchWatchProviders, resolveTitle } from '../providers/tmdb';
 import { aggregate } from '../utils/aggregate';
 import { getCached, putCached } from '../utils/cache';
@@ -55,7 +55,7 @@ async function fetchFromProviders(
     }
   }
 
-  return allResults;
+  return keepEnabledSources(allResults, settings);
 }
 
 function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
@@ -133,7 +133,15 @@ async function handleTitleDetected(
     const cached = await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
     if (cached) {
       if (tabGenerations.get(tabId) !== gen) return;
-      const panelData = { ...cached, alternatives, candidates, fromCache: true };
+      const results = keepEnabledSources(cached.results, settings);
+      const panelData = {
+        ...cached,
+        results,
+        aggregate: aggregate(results, settings.sourceWeights),
+        alternatives,
+        candidates,
+        fromCache: true,
+      };
       tabStates.set(tabId, { state: 'ready', data: panelData });
       updateBadge(tabId, panelData.aggregate, settings.badgeGreenMin, settings.badgeYellowMin);
       return;

@@ -23,6 +23,16 @@ export function getEnabledProviders(settings: Settings): RatingProvider[] {
   });
 }
 
+/**
+ * A provider runs when any of its sources is enabled, but it returns all of
+ * them; drop the ones the user turned off so they are neither shown nor aggregated.
+ */
+export function keepEnabledSources(results: RatingResult[], settings: Settings): RatingResult[] {
+  return results.filter(
+    (r) => settings.enabledSources[r.status === 'ok' ? r.rating.source : r.source],
+  );
+}
+
 export function unavailableResults(provider: RatingProvider, reasonKey: string): RatingResult[] {
   return provider.produces.map((source: SourceId) => ({
     status: 'unavailable' as const,
