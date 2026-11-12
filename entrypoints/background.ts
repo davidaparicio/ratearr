@@ -7,6 +7,7 @@ import { buildCandidates } from '../utils/candidates';
 import { dbg, setDebug } from '../utils/debug';
 import type { Msg } from '../utils/messages';
 import { getSettings, type Settings } from '../utils/settings';
+import { deleteTabState, getTabState, setTabState } from '../utils/tab-state';
 import type {
   RatingResult,
   RatingsPanelData,
@@ -20,13 +21,9 @@ const PROVIDER_TIMEOUT_MS = 8000;
 // MV2 (Firefox) uses browserAction; MV3 (Chrome) uses action
 const browserAction = browser.action ?? browser.browserAction;
 
-interface TabState {
-  state: 'loading' | 'ready' | 'no-title' | 'error' | 'not-found';
-  data: RatingsPanelData | null;
-}
-
-const tabStates = new Map<number, TabState>();
 const tabGenerations = new Map<number, number>();
+// Tabs with a lookup running in this worker instance; a stored 'loading' state
+// for any other tab was interrupted by a worker restart.
 const inFlightTabs = new Set<number>();
 const inFlightProviders = new Map<string, Promise<RatingResult[]>>();
 
@@ -85,7 +82,7 @@ async function handleTitleDetected(
   inFlightTabs.add(tabId);
 
   try {
-    tabStates.set(tabId, { state: 'loading', data: null });
+    await setTabState(tabId, { state: 'loading', data: null, query });
     updateBadge(tabId, undefined);
 
     const settings = await getSettings();
@@ -102,13 +99,13 @@ async function handleTitleDetected(
       resolution = await resolveTitle(query, settings);
     } catch (err) {
       console.warn('Ratearr: resolution failed', err);
-      tabStates.set(tabId, { state: 'error', data: null });
+      await setTabState(tabId, { state: 'error', data: null, query });
       updateBadge(tabId, undefined);
       return;
     }
     if (!resolution) {
       dbg('pipeline', 'no resolution found');
-      tabStates.set(tabId, { state: 'not-found', data: null });
+      await setTabState(tabId, { state: 'not-found', data: null, query });
       updateBadge(tabId, undefined);
       return;
     }
@@ -145,7 +142,7 @@ async function handleTitleDetected(
         candidates,
         fromCache: true,
       };
-      tabStates.set(tabId, { state: 'ready', data: panelData });
+      await setTabState(tabId, { state: 'ready', data: panelData, query });
       updateBadge(tabId, panelData.aggregate, settings.badgeGreenMin, settings.badgeYellowMin);
       return;
     }
@@ -190,10 +187,11 @@ async function handleTitleDetected(
     if (isCacheable(allResults)) {
       await putCached(resolved.mediaType, resolved.tmdbId, panelData);
     }
-    tabStates.set(tabId, { state: 'ready', data: panelData });
+    await setTabState(tabId, { state: 'ready', data: panelData, query });
     updateBadge(tabId, agg, settings.badgeGreenMin, settings.badgeYellowMin);
   } finally {
-    inFlightTabs.delete(tabId);
+    // A newer lookup for this tab may still be running; let it clear the flag.
+    if (tabGenerations.get(tabId) === gen) inFlightTabs.delete(tabId);
   }
 }
 
@@ -264,53 +262,56 @@ export default defineBackground(() => {
 
       if (msg.kind === 'get-panel-data') {
         if (typeof msg.tabId !== 'number') return undefined;
-        const tabState = tabStates.get(msg.tabId);
-        const response: Msg = {
-          kind: 'panel-data',
-          data: tabState?.data ?? null,
-          state: tabState?.state ?? 'idle',
-        };
-        return Promise.resolve(response);
+        const tabId = msg.tabId;
+        return getTabState(tabId).then((tabState): Msg => {
+          if (tabState?.state === 'loading' && tabState.query && !inFlightTabs.has(tabId)) {
+            dbg('pipeline', 'resuming lookup interrupted by a worker restart');
+            handleTitleDetected(tabState.query, tabId).catch((err) =>
+              console.error('Ratearr: pipeline error', err),
+            );
+          }
+          return {
+            kind: 'panel-data',
+            data: tabState?.data ?? null,
+            state: tabState?.state ?? 'idle',
+          };
+        });
       }
 
       if (msg.kind === 'select-alternative') {
         if (typeof msg.tabId !== 'number' || typeof msg.tmdbId !== 'number') return undefined;
         if (msg.mediaType != null && msg.mediaType !== 'movie' && msg.mediaType !== 'tv')
           return undefined;
-        const previousCandidates = tabStates.get(msg.tabId)?.data?.candidates;
-        tabStates.set(msg.tabId, { state: 'loading', data: null });
+        const tabId = msg.tabId;
         const query: TitleQuery = {
           title: '',
           ids: { tmdb: msg.tmdbId },
           mediaType: (msg.mediaType as TitleQuery['mediaType']) ?? 'movie',
           sourceSite: 'alternative',
         };
-        handleTitleDetected(query, msg.tabId, previousCandidates).catch((err) =>
-          console.error('Ratearr: pipeline error', err),
-        );
+        getTabState(tabId)
+          .then((tabState) => handleTitleDetected(query, tabId, tabState?.data?.candidates))
+          .catch((err) => console.error('Ratearr: pipeline error', err));
         return undefined;
       }
 
       if (msg.kind === 'refresh') {
         if (typeof msg.tabId !== 'number') return undefined;
-        const tabState = tabStates.get(msg.tabId);
-        if (tabState?.data?.resolved) {
-          const previousCandidates = tabState.data.candidates;
-          tabStates.set(msg.tabId, { state: 'loading', data: null });
-          const query: TitleQuery = {
-            title: tabState.data.resolved.title,
-            year: tabState.data.resolved.year,
-            mediaType: tabState.data.resolved.mediaType,
-            ids: {
-              tmdb: tabState.data.resolved.tmdbId,
-              imdb: tabState.data.resolved.imdbId,
-            },
-            sourceSite: 'refresh',
-          };
-          handleTitleDetected(query, msg.tabId, previousCandidates, true).catch((err) =>
-            console.error('Ratearr: pipeline error', err),
-          );
-        }
+        const tabId = msg.tabId;
+        getTabState(tabId)
+          .then((tabState) => {
+            const resolved = tabState?.data?.resolved;
+            if (!resolved) return;
+            const query: TitleQuery = {
+              title: resolved.title,
+              year: resolved.year,
+              mediaType: resolved.mediaType,
+              ids: { tmdb: resolved.tmdbId, imdb: resolved.imdbId },
+              sourceSite: 'refresh',
+            };
+            return handleTitleDetected(query, tabId, tabState.data?.candidates, true);
+          })
+          .catch((err) => console.error('Ratearr: pipeline error', err));
         return undefined;
       }
 
@@ -319,7 +320,7 @@ export default defineBackground(() => {
   );
 
   browser.tabs.onRemoved.addListener((tabId) => {
-    tabStates.delete(tabId);
+    deleteTabState(tabId);
     tabGenerations.delete(tabId);
     inFlightTabs.delete(tabId);
   });
