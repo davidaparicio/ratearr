@@ -94,6 +94,8 @@ async function resolveByImdbId(
   };
 }
 
+const MAX_ALTERNATIVES = 7;
+
 async function fetchBilingualResults(
   endpoint: string,
   baseParams: Record<string, string>,
@@ -164,7 +166,7 @@ async function resolveByTitleSearch(
     // non-critical
   }
 
-  const alternatives: TitleCandidate[] = ranked.slice(1, 4).map((r) => ({
+  const alternatives: TitleCandidate[] = ranked.slice(1, 1 + MAX_ALTERNATIVES).map((r) => ({
     tmdbId: r.item.id,
     mediaType,
     title: r.item.title || r.item.name,
