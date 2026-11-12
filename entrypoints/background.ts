@@ -2,7 +2,7 @@ import type { Browser } from 'wxt/browser';
 import { getEnabledProviders, keepEnabledSources, unavailableResults } from '../providers/registry';
 import { fetchWatchProviders, resolveTitle } from '../providers/tmdb';
 import { aggregate } from '../utils/aggregate';
-import { getCached, putCached } from '../utils/cache';
+import { getCached, isCacheable, putCached } from '../utils/cache';
 import { buildCandidates } from '../utils/candidates';
 import { dbg, setDebug } from '../utils/debug';
 import type { Msg } from '../utils/messages';
@@ -78,6 +78,7 @@ async function handleTitleDetected(
   query: TitleQuery,
   tabId: number,
   previousCandidates?: TitleCandidate[],
+  bypassCache = false,
 ) {
   const gen = (tabGenerations.get(tabId) ?? 0) + 1;
   tabGenerations.set(tabId, gen);
@@ -130,7 +131,9 @@ async function handleTitleDetected(
         alternatives.map((a) => `${a.title} (${a.year}) tmdb:${a.tmdbId}`),
       );
 
-    const cached = await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
+    const cached = bypassCache
+      ? null
+      : await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
     if (cached) {
       if (tabGenerations.get(tabId) !== gen) return;
       const results = keepEnabledSources(cached.results, settings);
@@ -184,7 +187,9 @@ async function handleTitleDetected(
       fromCache: false,
     };
 
-    await putCached(resolved.mediaType, resolved.tmdbId, panelData);
+    if (isCacheable(allResults)) {
+      await putCached(resolved.mediaType, resolved.tmdbId, panelData);
+    }
     tabStates.set(tabId, { state: 'ready', data: panelData });
     updateBadge(tabId, agg, settings.badgeGreenMin, settings.badgeYellowMin);
   } finally {
@@ -302,7 +307,7 @@ export default defineBackground(() => {
             },
             sourceSite: 'refresh',
           };
-          handleTitleDetected(query, msg.tabId, previousCandidates).catch((err) =>
+          handleTitleDetected(query, msg.tabId, previousCandidates, true).catch((err) =>
             console.error('Ratearr: pipeline error', err),
           );
         }
