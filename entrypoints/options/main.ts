@@ -1,6 +1,12 @@
 import { clearCache } from '../../utils/cache';
 import { applyI18n, t } from '../../utils/i18n';
-import { DEFAULT_SETTINGS, getSettings, type Settings, saveSettings } from '../../utils/settings';
+import {
+  DEFAULT_SETTINGS,
+  getSettings,
+  type Settings,
+  sanitizeSettings,
+  saveSettings,
+} from '../../utils/settings';
 import { applyTheme } from '../../utils/theme';
 import type { SourceId } from '../../utils/types';
 
@@ -197,7 +203,8 @@ async function init() {
       if (!file) return;
       try {
         const text = await file.text();
-        const imported = JSON.parse(text) as Partial<Settings>;
+        const imported = sanitizeSettings(JSON.parse(text));
+        if (Object.keys(imported).length === 0) throw new Error('no usable settings');
         await saveSettings(imported);
         init();
       } catch {
