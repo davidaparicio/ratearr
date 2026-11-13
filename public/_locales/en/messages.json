@@ -166,6 +166,14 @@
     "message": "Parse error",
     "description": "When response parsing fails"
   },
+  "err_bad_key": {
+    "message": "Invalid API key",
+    "description": "When the provider rejects the configured API key"
+  },
+  "err_rate_limit": {
+    "message": "Daily limit reached",
+    "description": "When the provider's request quota for the API key is used up"
+  },
   "options_title": {
     "message": "Ratearr Settings",
     "description": "Options page title"

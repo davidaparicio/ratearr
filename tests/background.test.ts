@@ -107,3 +107,38 @@ describe('background pipeline — cache vs. settings changes', () => {
     expect(paths).not.toContain('/3/movie/2');
   });
 });
+
+describe('background pipeline — partial failures', () => {
+  it('caches the good results and retries only the failed provider', async () => {
+    const tmdb = tmdbOnly([{ id: 2, title: 'Fast', release_date: '2020-01-01' }]);
+    const bg = await startBackground(
+      (url) => {
+        if (url.hostname === 'www.omdbapi.com') {
+          return json({ Response: 'False', Error: 'Request limit reached!' }, 401);
+        }
+        if (url.hostname === 'api.themoviedb.org' && url.pathname.endsWith('/external_ids')) {
+          return json({ imdb_id: 'tt0000002' });
+        }
+        return tmdb(url);
+      },
+      { omdbApiKey: 'key' },
+    );
+    const query = { title: 'Fast', ids: {}, sourceSite: 'test' };
+
+    await bg.detect(query, TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).state).toBe('ready'));
+    bg.fetchMock.mockClear();
+
+    await bg.detect(query, TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).data?.fromCache).toBe(true));
+
+    const hosts = new Set(bg.fetchMock.mock.calls.map(([u]) => new URL(String(u)).hostname));
+    expect(hosts.has('www.omdbapi.com')).toBe(true);
+    expect(hosts.has('www.allocine.fr')).toBe(false);
+    expect(hosts.has('letterboxd.com')).toBe(false);
+    const imdb = (await bg.panel(TAB)).data!.results.find(
+      (r) => r.status === 'unavailable' && r.source === 'imdb',
+    );
+    expect(imdb).toMatchObject({ reasonKey: 'err_rate_limit' });
+  });
+});

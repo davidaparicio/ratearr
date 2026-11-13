@@ -126,6 +126,12 @@
   "err_parse": {
     "message": "Analysefehler"
   },
+  "err_bad_key": {
+    "message": "Ungültiger API-Schlüssel"
+  },
+  "err_rate_limit": {
+    "message": "Tageslimit erreicht"
+  },
   "options_title": {
     "message": "Ratearr-Einstellungen"
   },

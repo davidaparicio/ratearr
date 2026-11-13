@@ -93,6 +93,35 @@ describe('providersToRefetch', () => {
   });
 });
 
+describe('providersToRefetch — transient failures', () => {
+  const onlyTmdbAndOmdb = settingsWith({
+    'allocine-presse': false,
+    'allocine-spectateurs': false,
+    senscritique: false,
+    letterboxd: false,
+  });
+  const tmdbOk: RatingResult = { status: 'ok', rating: { source: 'tmdb', value: 7, scale: 10 } };
+  const omdbFailed = (reasonKey: string): RatingResult[] =>
+    (['imdb', 'rottentomatoes', 'metacritic'] as const).map((source) => ({
+      status: 'unavailable',
+      source,
+      reasonKey,
+    }));
+  const withKey = { ...onlyTmdbAndOmdb, omdbApiKey: 'key' };
+
+  it.each(['err_network', 'err_rate_limit', 'err_bad_key'])(
+    'retries a provider cached with %s',
+    (reasonKey) => {
+      const ids = providersToRefetch([tmdbOk, ...omdbFailed(reasonKey)], withKey).map((p) => p.id);
+      expect(ids).toEqual(['omdb']);
+    },
+  );
+
+  it('does not retry a provider cached as not found', () => {
+    expect(providersToRefetch([tmdbOk, ...omdbFailed('err_not_found')], withKey)).toEqual([]);
+  });
+});
+
 describe('mergeResults', () => {
   it('replaces cached results with fresh ones for the same source, in provider order', () => {
     const cached: RatingResult[] = [

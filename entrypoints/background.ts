@@ -8,7 +8,7 @@ import {
 } from '../providers/registry';
 import { fetchWatchProviders, resolveTitle } from '../providers/tmdb';
 import { aggregate } from '../utils/aggregate';
-import { getCached, isCacheable, putCached } from '../utils/cache';
+import { getCached, putCached } from '../utils/cache';
 import { buildCandidates } from '../utils/candidates';
 import { dbg, setDebug } from '../utils/debug';
 import type { Msg } from '../utils/messages';
@@ -152,9 +152,7 @@ async function handleTitleDetected(
         if (tabGenerations.get(tabId) !== gen) return;
         cached.results = mergeResults(cached.results, fresh);
         // Keeps the original fetchedAt, so topping up doesn't extend the TTL.
-        if (isCacheable(fresh)) {
-          await putCached(resolved.mediaType, resolved.tmdbId, { ...cached, fromCache: false });
-        }
+        await putCached(resolved.mediaType, resolved.tmdbId, { ...cached, fromCache: false });
       }
       const results = keepEnabledSources(cached.results, settings);
       const panelData = {
@@ -205,9 +203,8 @@ async function handleTitleDetected(
       fromCache: false,
     };
 
-    if (isCacheable(allResults)) {
-      await putCached(resolved.mediaType, resolved.tmdbId, panelData);
-    }
+    // Failed sources are cached too; the next cache hit retries just those.
+    await putCached(resolved.mediaType, resolved.tmdbId, panelData);
     await setTabState(tabId, { state: 'ready', data: panelData, query });
     updateBadge(tabId, agg, settings.badgeGreenMin, settings.badgeYellowMin);
   } finally {

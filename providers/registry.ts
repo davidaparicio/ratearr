@@ -30,10 +30,13 @@ function sourceOf(result: RatingResult): SourceId {
   return result.status === 'ok' ? result.rating.source : result.source;
 }
 
+/** Reasons a later attempt may succeed (the key may also have been fixed meanwhile). */
+const RETRYABLE_REASONS = new Set(['err_network', 'err_rate_limit', 'err_bad_key']);
+
 /**
  * Enabled providers that a cached entry can't answer for: one of their enabled
- * sources was never fetched (enabled after caching), or was cached as "no key"
- * and the key has since been added.
+ * sources was never fetched (enabled after caching), failed in a way worth
+ * retrying, or was cached as "no key" and the key has since been added.
  */
 export function providersToRefetch(cached: RatingResult[], settings: Settings): RatingProvider[] {
   const bySource = new Map(cached.map((r) => [sourceOf(r), r]));
@@ -42,11 +45,9 @@ export function providersToRefetch(cached: RatingResult[], settings: Settings): 
       if (!settings.enabledSources[source]) return false;
       const result = bySource.get(source);
       if (!result) return true;
-      return (
-        result.status === 'unavailable' &&
-        result.reasonKey === 'err_no_key' &&
-        p.isConfigured(settings)
-      );
+      if (result.status === 'ok') return false;
+      if (RETRYABLE_REASONS.has(result.reasonKey)) return true;
+      return result.reasonKey === 'err_no_key' && p.isConfigured(settings);
     }),
   );
 }

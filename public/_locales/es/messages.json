@@ -126,6 +126,12 @@
   "err_parse": {
     "message": "Error de análisis"
   },
+  "err_bad_key": {
+    "message": "Clave API no válida"
+  },
+  "err_rate_limit": {
+    "message": "Límite diario alcanzado"
+  },
   "options_title": {
     "message": "Ajustes de Ratearr"
   },

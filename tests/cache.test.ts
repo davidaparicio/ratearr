@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearCache, getCached, isCacheable, putCached } from '../utils/cache';
+import { clearCache, getCached, putCached } from '../utils/cache';
 import type { CacheEntry, RatingsPanelData } from '../utils/types';
 
 interface CacheIndex {
@@ -130,26 +130,6 @@ describe('cache', () => {
 
       const keys = new Set(index.entries.map((e) => e.key));
       expect(keys.size).toBe(10);
-    });
-  });
-
-  describe('isCacheable', () => {
-    it('accepts ok and not-found results', () => {
-      expect(
-        isCacheable([
-          { status: 'ok', rating: { source: 'tmdb', value: 8, scale: 10 } },
-          { status: 'unavailable', source: 'letterboxd', reasonKey: 'err_not_found' },
-        ]),
-      ).toBe(true);
-    });
-
-    it('rejects results with a transient network failure', () => {
-      expect(
-        isCacheable([
-          { status: 'ok', rating: { source: 'tmdb', value: 8, scale: 10 } },
-          { status: 'unavailable', source: 'senscritique', reasonKey: 'err_network' },
-        ]),
-      ).toBe(false);
     });
   });
 });

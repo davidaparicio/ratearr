@@ -1,4 +1,4 @@
-import type { CacheEntry, MediaType, RatingResult, RatingsPanelData } from './types';
+import type { CacheEntry, MediaType, RatingsPanelData } from './types';
 
 const MAX_ENTRIES = 300;
 const PRUNE_COUNT = 50;
@@ -56,11 +56,6 @@ export async function getCached(
   }
 
   return { ...entry.data, fromCache: true };
-}
-
-/** Network failures and timeouts are transient; caching them would pin the error for the whole TTL. */
-export function isCacheable(results: RatingResult[]): boolean {
-  return results.every((r) => r.status === 'ok' || r.reasonKey !== 'err_network');
 }
 
 export async function putCached(

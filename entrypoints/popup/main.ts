@@ -256,7 +256,7 @@ function renderUnavailableRatingRow(
   reason.textContent = t(result.reasonKey);
   row.appendChild(reason);
 
-  if (result.reasonKey === 'err_no_key') {
+  if (result.reasonKey === 'err_no_key' || result.reasonKey === 'err_bad_key') {
     const link = document.createElement('a');
     link.href = '#';
     link.className = 'options-link';
