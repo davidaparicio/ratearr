@@ -32,13 +32,19 @@ export async function startBackground(
   }
 
   const action = fakeBrowser.action as unknown as Record<string, unknown>;
-  action.setBadgeText = vi.fn(async () => {});
+  const setBadgeText = vi.fn(async (_details: { tabId?: number; text: string }) => {});
+  action.setBadgeText = setBadgeText;
   action.setBadgeBackgroundColor = vi.fn(async () => {});
+  // Rejects like Chrome does without a user gesture.
+  action.openPopup = vi.fn(async () => {
+    throw new Error('openPopup requires a user gesture');
+  });
   (fakeBrowser.i18n as unknown as Record<string, unknown>).getMessage = vi.fn((key: string) => key);
   const menus = fakeBrowser.contextMenus as unknown as Record<string, unknown>;
   menus.removeAll = vi.fn(async () => {});
   menus.create = vi.fn();
-  menus.onClicked = { addListener: vi.fn() };
+  const onMenuClicked = vi.fn();
+  menus.onClicked = { addListener: onMenuClicked };
 
   const fetchMock = vi.fn((input: string | URL | Request, init?: RequestInit) =>
     Promise.resolve(fetchHandler(new URL(input instanceof Request ? input.url : input), init)),
@@ -58,6 +64,13 @@ export async function startBackground(
   return {
     fetchMock,
     send,
+    /** Badge texts set for `tabId`, in order. */
+    badgeTexts: (tabId: number) =>
+      setBadgeText.mock.calls.filter(([d]) => d.tabId === tabId).map(([d]) => d.text),
+    clickContextMenu(selectionText: string, tabId: number) {
+      const listener = onMenuClicked.mock.calls[0]![0];
+      listener({ menuItemId: 'ratearr-lookup', selectionText }, { id: tabId });
+    },
     detect: (query: TitleQuery, tabId: number) => send({ kind: 'title-detected', query }, tabId),
     async panel(tabId: number): Promise<{ state: PanelState; data: RatingsPanelData | null }> {
       const res = await send({ kind: 'get-panel-data', tabId });

@@ -101,7 +101,8 @@ async function handleTitleDetected(
   const publish = async (state: TabState['state'], data: RatingsPanelData | null = null) => {
     if (tabGenerations.get(tabId) !== gen) return;
     const done = setTabState(tabId, { state, data, query, resumed });
-    updateBadge(tabId, data?.aggregate, settings?.badgeGreenMin, settings?.badgeYellowMin);
+    if (state === 'loading') showLoadingBadge(tabId);
+    else updateBadge(tabId, data?.aggregate, settings?.badgeGreenMin, settings?.badgeYellowMin);
     await done;
   };
 
@@ -250,6 +251,11 @@ async function putCachedSafely(...args: Parameters<typeof putCached>): Promise<v
   }
 }
 
+function showLoadingBadge(tabId: number) {
+  browserAction.setBadgeText({ tabId, text: '...' });
+  browserAction.setBadgeBackgroundColor({ tabId, color: '#6366f1' });
+}
+
 function updateBadge(
   tabId: number,
   agg: { value: number } | undefined,
@@ -292,16 +298,13 @@ export default defineBackground(() => {
       ids: {},
       sourceSite: 'context-menu',
     };
-    browserAction.setBadgeText({ tabId: tab.id, text: '...' });
-    browserAction.setBadgeBackgroundColor({ tabId: tab.id, color: '#6366f1' });
     handleTitleDetected(query, tab.id).catch((err) =>
       console.error('Ratearr: pipeline error', err),
     );
-    try {
-      browserAction.openPopup?.();
-    } catch {
-      /* not supported */
-    }
+    // Unsupported on older browsers, and may reject (e.g. no user gesture).
+    Promise.resolve()
+      .then(() => browserAction.openPopup?.())
+      .catch(() => {});
   });
 
   browser.runtime.onMessage.addListener(

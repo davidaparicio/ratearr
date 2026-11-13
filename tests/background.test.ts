@@ -266,3 +266,22 @@ describe('background pipeline — leaving a title page', () => {
     expect((await bg.panel(TAB)).state).toBe('idle');
   });
 });
+
+describe('background pipeline — context menu', () => {
+  it('keeps the loading badge until the lookup finishes, then shows the score', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tmdb = tmdbOnly([{ id: 2, title: 'Fast', release_date: '2020-01-01' }]);
+    const bg = await startBackground((url) => gate.then(() => tmdb(url)));
+
+    bg.clickContextMenu('Fast', TAB);
+    await vi.waitFor(() => expect(bg.badgeTexts(TAB).at(-1)).toBe('...'));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(bg.badgeTexts(TAB).at(-1)).toBe('...');
+
+    release();
+    await vi.waitFor(() => expect(bg.badgeTexts(TAB).at(-1)).toBe('7.5'));
+  });
+});
