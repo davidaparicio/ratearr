@@ -230,6 +230,17 @@ async function handleTitleDetected(
   }
 }
 
+/**
+ * The tab moved on to a page without a (detected) title: forget what was shown
+ * and invalidate any lookup still running for the previous page.
+ */
+function clearTab(tabId: number) {
+  tabGenerations.set(tabId, (tabGenerations.get(tabId) ?? 0) + 1);
+  inFlightTabs.delete(tabId);
+  deleteTabState(tabId);
+  updateBadge(tabId, undefined);
+}
+
 /** The cache is an optimisation: failing to write it (e.g. storage full) mustn't fail the lookup. */
 async function putCachedSafely(...args: Parameters<typeof putCached>): Promise<void> {
   try {
@@ -311,6 +322,11 @@ export default defineBackground(() => {
         return undefined;
       }
 
+      if (msg.kind === 'title-cleared' && sender.tab?.id != null) {
+        clearTab(sender.tab.id);
+        return undefined;
+      }
+
       if (msg.kind === 'get-panel-data') {
         if (typeof msg.tabId !== 'number') return undefined;
         const tabId = msg.tabId;
@@ -380,6 +396,12 @@ export default defineBackground(() => {
       return undefined;
     },
   );
+
+  // A new document is loading in the tab. (changeInfo.url would need the "tabs"
+  // permission; in-site navigations are reported by the content script instead.)
+  browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (changeInfo.status === 'loading') clearTab(tabId);
+  });
 
   browser.tabs.onRemoved.addListener((tabId) => {
     deleteTabState(tabId);

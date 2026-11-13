@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { json, notFound, startBackground, tmdbOnly } from './helpers/background';
 
 const TAB = 1;
@@ -223,5 +224,45 @@ describe('background pipeline — resuming after a worker restart', () => {
     const bg = await startBackground(tmdb, {}, { keepStorage: true });
     expect((await bg.panel(TAB)).state).toBe('error');
     expect(bg.fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('background pipeline — leaving a title page', () => {
+  const query = { title: 'Fast', ids: {}, sourceSite: 'test' };
+  const tmdb = tmdbOnly([{ id: 2, title: 'Fast', release_date: '2020-01-01' }]);
+
+  it('forgets the ratings when the tab starts loading another page', async () => {
+    const bg = await startBackground(tmdb);
+    await bg.detect(query, TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).state).toBe('ready'));
+
+    await fakeBrowser.tabs.onUpdated.trigger(TAB, { status: 'loading' }, {} as never);
+
+    expect(await bg.panel(TAB)).toEqual({ state: 'idle', data: null });
+  });
+
+  it('forgets the ratings when the content script reports a page with no title', async () => {
+    const bg = await startBackground(tmdb);
+    await bg.detect(query, TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).state).toBe('ready'));
+
+    await bg.send({ kind: 'title-cleared' }, TAB);
+
+    expect(await bg.panel(TAB)).toEqual({ state: 'idle', data: null });
+  });
+
+  it('drops the result of a lookup still running for the previous page', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const bg = await startBackground((url) => gate.then(() => tmdb(url)));
+    await bg.detect(query, TAB);
+
+    await fakeBrowser.tabs.onUpdated.trigger(TAB, { status: 'loading' }, {} as never);
+    release();
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect((await bg.panel(TAB)).state).toBe('idle');
   });
 });

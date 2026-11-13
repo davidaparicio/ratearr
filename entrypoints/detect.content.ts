@@ -1,4 +1,5 @@
 import { getDetector } from '../detectors/registry';
+import type { Msg } from '../utils/messages';
 import type { TitleQuery } from '../utils/types';
 
 export default defineContentScript({
@@ -32,7 +33,11 @@ export default defineContentScript({
 
       const url = new URL(location.href);
       const detector = getDetector(url.hostname);
-      if (!detector?.matches(url)) return;
+      if (!detector?.matches(url)) {
+        // e.g. an in-site navigation from a title to a listing page
+        clearDetection();
+        return;
+      }
 
       const query = detector.extract(document, url);
       if (query) {
@@ -52,12 +57,24 @@ export default defineContentScript({
         } else if (attempts >= 10) {
           clearInterval(activePoll);
           activePoll = undefined;
+          clearDetection();
         }
       }, 300);
     }
 
+    // Whether the panel currently shows a title this script detected; only then
+    // is there anything to clear (and a context-menu lookup is left alone).
+    let hasDetection = false;
+
     function sendDetection(query: TitleQuery) {
-      browser.runtime.sendMessage({ kind: 'title-detected', query }).catch(() => {});
+      hasDetection = true;
+      browser.runtime.sendMessage({ kind: 'title-detected', query } satisfies Msg).catch(() => {});
+    }
+
+    function clearDetection() {
+      if (!hasDetection) return;
+      hasDetection = false;
+      browser.runtime.sendMessage({ kind: 'title-cleared' } satisfies Msg).catch(() => {});
     }
 
     function onLocationChange() {
