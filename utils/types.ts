@@ -38,7 +38,7 @@ export interface TitleQuery {
   originalTitle?: string;
   year?: number;
   mediaType?: MediaType;
-  ids: { imdb?: string; tmdb?: number; allocine?: string };
+  ids: { imdb?: string; tmdb?: number };
   sourceSite: string;
 }
 

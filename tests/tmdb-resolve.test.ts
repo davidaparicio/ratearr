@@ -291,3 +291,34 @@ describe('resolveTitle — original title of a series', () => {
     expect(result?.resolved.localizedTitle).toBe('La casa de papel');
   });
 });
+
+describe('resolveTitle — original title from the page', () => {
+  it('searches the original title when the displayed one finds nothing', async () => {
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const u = new URL(typeof url === 'string' ? url : url.toString());
+      const results =
+        u.searchParams.get('query') === 'Gisaengchung'
+          ? [
+              {
+                id: 496243,
+                title: 'Parasite',
+                original_title: 'Gisaengchung',
+                release_date: '2019-05-30',
+              },
+            ]
+          : [];
+      const body = u.pathname.startsWith('/3/search/') ? { results } : {};
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const query: TitleQuery = {
+      title: 'Parasite (Version Noir et Blanc)',
+      originalTitle: 'Gisaengchung',
+      mediaType: 'movie',
+      ids: {},
+      sourceSite: 'www.allocine.fr',
+    };
+
+    expect((await resolveTitle(query, settings))?.resolved.tmdbId).toBe(496243);
+  });
+});

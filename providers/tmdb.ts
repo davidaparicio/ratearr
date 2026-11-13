@@ -223,7 +223,12 @@ export async function resolveTitle(
 ): Promise<ResolutionResult | null> {
   if (query.ids.tmdb) return resolveByTmdbId(query, settings);
   if (query.ids.imdb) return resolveByImdbId(query, settings);
-  return resolveByTitleSearch(query, settings);
+  const byTitle = await resolveByTitleSearch(query, settings);
+  // e.g. a localized or re-release title the page shows, with the original alongside
+  if (!byTitle && query.originalTitle && query.originalTitle !== query.title) {
+    return resolveByTitleSearch({ ...query, title: query.originalTitle }, settings);
+  }
+  return byTitle;
 }
 
 function detectCountry(): string {
