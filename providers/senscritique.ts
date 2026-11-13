@@ -22,11 +22,11 @@ interface ScProductWithStats extends ScProduct {
   stats: { ratingCount: number };
 }
 
-async function scQuery<T>(query: string): Promise<T> {
+async function scQuery<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
   const resp = await fetch(SC_GRAPHQL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, variables }),
   });
   if (!resp.ok) throw new Error(`senscritique_http_${resp.status}`);
   const json = await resp.json();
@@ -71,11 +71,13 @@ async function searchSensCritique(
   mediaType: 'movie' | 'tv',
   year?: number,
 ): Promise<ScProduct | null> {
-  const escaped = title.replace(/"/g, '\\"');
+  // Titles come from page text and selections (quotes, backslashes, newlines),
+  // so pass them as a variable rather than splicing them into the query.
   const data = await scQuery<{
     searchAutocomplete: { items: { product: ScProduct | null }[] };
   }>(
-    `{ searchAutocomplete(keywords: "${escaped}") { items { product { id title year_of_production rating url slug universe } } } }`,
+    'query Search($keywords: String!) { searchAutocomplete(keywords: $keywords) { items { product { id title year_of_production rating url slug universe } } } }',
+    { keywords: title },
   );
 
   return filterAndRankProducts(data.searchAutocomplete.items, title, mediaType, year);
@@ -106,10 +108,18 @@ export const senscritiqueProvider: RatingProvider = {
       : [resolved.title];
 
     let product: Awaited<ReturnType<typeof searchSensCritique>> = null;
+    const errors: unknown[] = [];
     for (const t of titlesToTry) {
-      product = await searchSensCritique(t, resolved.mediaType, resolved.year);
+      try {
+        product = await searchSensCritique(t, resolved.mediaType, resolved.year);
+      } catch (err) {
+        errors.push(err);
+        continue;
+      }
       if (product?.rating != null) break;
     }
+    // Every search failed: surface it as a network error rather than "not found".
+    if (errors.length === titlesToTry.length) throw errors[0];
 
     if (!product || product.rating == null) {
       return [{ status: 'unavailable', source: 'senscritique', reasonKey: 'err_not_found' }];
