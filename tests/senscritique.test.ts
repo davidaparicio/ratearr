@@ -235,3 +235,38 @@ describe('senscritique — French titles', () => {
     expect(results[0]).toMatchObject({ status: 'ok', rating: { value: 8.4 } });
   });
 });
+
+describe('senscritique — rating link', () => {
+  it('builds the link on www.senscritique.com whatever the API returns as url', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const body = JSON.parse(init.body as string);
+        if (!body.query.includes('searchAutocomplete')) {
+          return new Response(JSON.stringify({ data: { product: { stats: { ratingCount: 1 } } } }));
+        }
+        const product = {
+          id: 1,
+          title: 'Inception',
+          originalTitle: null,
+          year_of_production: 2010,
+          rating: 7.5,
+          url: '@evil.example/phish',
+          slug: 'inception',
+          universe: 1,
+        };
+        return new Response(
+          JSON.stringify({ data: { searchAutocomplete: { items: [{ product }] } } }),
+        );
+      }),
+    );
+    const [result] = await senscritiqueProvider.fetchRatings(
+      { tmdbId: 1, mediaType: 'movie', title: 'Inception', year: 2010 },
+      DEFAULT_SETTINGS,
+    );
+    vi.unstubAllGlobals();
+    expect(result!.status === 'ok' && new URL(result!.rating.url!).hostname).toBe(
+      'www.senscritique.com',
+    );
+  });
+});

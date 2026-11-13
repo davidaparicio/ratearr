@@ -2,6 +2,7 @@ import { applyI18n, t } from '../../utils/i18n';
 import type { Msg, PanelState } from '../../utils/messages';
 import { applyTheme } from '../../utils/theme';
 import type { RatingResult, RatingsPanelData, WatchProviderData } from '../../utils/types';
+import { httpsUrl } from '../../utils/url';
 
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w92';
 const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w45';
@@ -227,9 +228,10 @@ function renderOkRatingRow(result: Extract<RatingResult, { status: 'ok' }>): HTM
     row.appendChild(count);
   }
 
-  if (result.rating.url) {
+  const ratingUrl = result.rating.url && httpsUrl(result.rating.url);
+  if (ratingUrl) {
     const link = document.createElement('a');
-    link.href = result.rating.url;
+    link.href = ratingUrl;
     link.target = '_blank';
     link.rel = 'noopener';
     link.className = 'source-link';
@@ -406,9 +408,10 @@ function renderWatchProviders(wp: WatchProviderData | undefined): HTMLElement | 
   headerText.textContent = t('popup_whereToWatch');
   header.appendChild(headerText);
 
-  if (wp.link) {
+  const allUrl = wp.link && httpsUrl(wp.link);
+  if (allUrl) {
     const allLink = document.createElement('a');
-    allLink.href = wp.link;
+    allLink.href = allUrl;
     allLink.target = '_blank';
     allLink.rel = 'noopener';
     allLink.className = 'wp-all-link';

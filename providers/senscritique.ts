@@ -2,6 +2,7 @@ import { dbg } from '../utils/debug';
 import { fetchWithTimeout } from '../utils/http';
 import { rankByTitleMatch } from '../utils/normalize';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
+import { httpsUrl } from '../utils/url';
 import type { RatingProvider } from './types';
 
 const SC_GRAPHQL = 'https://apollo.senscritique.com/';
@@ -138,7 +139,8 @@ export const senscritiqueProvider: RatingProvider = {
           value: product.rating,
           scale: 10,
           count,
-          url: `${SC_BASE}${product.url}`,
+          // Concatenating would let a value like "@other.host/" change the link's host.
+          url: httpsUrl(product.url, SC_BASE),
         },
       },
     ];
