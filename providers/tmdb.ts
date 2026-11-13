@@ -145,8 +145,8 @@ async function resolveByTitleSearch(
     getAltTitle: (r) => r.original_title || r.original_name || '',
     getYear: (r) => parseYear(r.release_date || r.first_air_date),
   }).sort((a, b) => {
-    if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;
     if (a.score !== b.score) return b.score - a.score;
+    if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;
     return (b.item.popularity || 0) - (a.item.popularity || 0);
   });
 
@@ -155,7 +155,10 @@ async function resolveByTitleSearch(
     'tmdb',
     `best: "${best.item.title || best.item.name}" score:${best.score} yearMatch:${best.yearMatch}`,
   );
-  if (best.score === 0 && !best.yearMatch) return null;
+  // The `year` search param already filters by year, so a year match says
+  // nothing about the title. With no title match, trust TMDB only when it
+  // returned a single hit (it also searches translations we don't receive).
+  if (best.score === 0 && results.length > 1) return null;
 
   const chosen = best.item;
   let imdbId: string | undefined;
