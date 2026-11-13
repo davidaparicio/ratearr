@@ -32,9 +32,13 @@ function mockFetch(url: string | URL | Request) {
   const u = new URL(typeof url === 'string' ? url : url.toString());
   const path = u.pathname;
 
-  if (path.includes('/search/movie')) {
+  if (path.includes('/search/movie') || path.includes('/search/multi')) {
     const lang = u.searchParams.get('language');
-    const body = lang === 'fr-FR' ? searchFrFixture : searchEnFixture;
+    const fixture = lang === 'fr-FR' ? searchFrFixture : searchEnFixture;
+    // /search/multi tags each hit with its media type
+    const body = path.includes('/search/multi')
+      ? { ...fixture, results: fixture.results.map((r) => ({ ...r, media_type: 'movie' })) }
+      : fixture;
     return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
   }
 
@@ -149,7 +153,8 @@ describe('resolveTitle — accepting a title-search result', () => {
       'fetch',
       vi.fn((url: string | URL | Request) => {
         const u = new URL(typeof url === 'string' ? url : url.toString());
-        const body = u.pathname.startsWith('/3/search/') ? { results } : {};
+        const tagged = results.map((r) => ({ ...r, media_type: 'movie' }));
+        const body = u.pathname.startsWith('/3/search/') ? { results: tagged } : {};
         return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
       }),
     );
@@ -178,5 +183,46 @@ describe('resolveTitle — accepting a title-search result', () => {
     ]);
     const query: TitleQuery = { title: 'Dune', year: 2021, ids: {}, sourceSite: 'test' };
     expect((await resolveTitle(query, settings))?.resolved.tmdbId).toBe(2);
+  });
+});
+
+describe('resolveTitle — unknown media type (Netflix, Prime Video, context menu)', () => {
+  const multiResults = [
+    { id: 66732, media_type: 'tv', name: 'Stranger Things', first_air_date: '2016-07-15' },
+    { id: 66732, media_type: 'movie', title: 'Stranger Things Movie', release_date: '2001-01-01' },
+    { id: 5, media_type: 'person', name: 'Stranger Things Fan' },
+  ];
+
+  function stubMulti() {
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const u = new URL(typeof url === 'string' ? url : url.toString());
+      const body = u.pathname === '/3/search/multi' ? { results: multiResults } : {};
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  const query: TitleQuery = { title: 'Stranger Things', ids: {}, sourceSite: 'www.netflix.com' };
+
+  it('finds series as well as movies', async () => {
+    stubMulti();
+    const result = await resolveTitle(query, settings);
+    expect(result?.resolved).toMatchObject({ tmdbId: 66732, mediaType: 'tv' });
+  });
+
+  it('looks up external ids under the media type of the chosen result', async () => {
+    const fetchMock = stubMulti();
+    await resolveTitle(query, settings);
+    const paths = fetchMock.mock.calls.map(([u]) => new URL(String(u)).pathname);
+    expect(paths).toContain('/3/tv/66732/external_ids');
+  });
+
+  it('ignores people and keeps a movie and series that share an id', async () => {
+    stubMulti();
+    const result = await resolveTitle(query, settings);
+    expect(result?.alternatives).toEqual([
+      expect.objectContaining({ tmdbId: 66732, mediaType: 'movie' }),
+    ]);
   });
 });

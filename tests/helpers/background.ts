@@ -74,7 +74,8 @@ export function tmdbOnly(movies: { id: number; title: string; release_date?: str
     const path = url.pathname;
     if (path.startsWith('/3/search/')) {
       const q = url.searchParams.get('query');
-      return json({ results: movies.filter((m) => m.title === q) });
+      const hits = movies.filter((m) => m.title === q).map((m) => ({ ...m, media_type: 'movie' }));
+      return json({ results: hits });
     }
     const id = Number(path.match(/\/3\/movie\/(\d+)/)?.[1]);
     const movie = movies.find((m) => m.id === id);

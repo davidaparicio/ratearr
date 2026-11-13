@@ -96,24 +96,34 @@ async function resolveByImdbId(
 
 const MAX_ALTERNATIVES = 7;
 
+/**
+ * Searches in English and French and merges the hits, each tagged with its
+ * `media_type`: taken from the hit for /search/multi (people are dropped), or
+ * `endpointMediaType` for the typed endpoints.
+ */
 async function fetchBilingualResults(
   endpoint: string,
   baseParams: Record<string, string>,
   settings: Settings,
+  endpointMediaType?: MediaType,
 ): Promise<any[]> {
   const [dataEn, dataFr] = await Promise.all([
     tmdbFetch(endpoint, { ...baseParams, language: 'en-US' }, settings),
     tmdbFetch(endpoint, { ...baseParams, language: 'fr-FR' }, settings),
   ]);
 
-  const seenIds = new Set<number>();
+  // Movie and TV ids are separate namespaces, so dedupe on both.
+  const seen = new Set<string>();
   const results: any[] = [];
   const enResults = Array.isArray(dataEn.results) ? dataEn.results : [];
   const frResults = Array.isArray(dataFr.results) ? dataFr.results : [];
   for (const r of [...enResults, ...frResults]) {
-    if (!seenIds.has(r.id)) {
-      seenIds.add(r.id);
-      results.push(r);
+    const mediaType = endpointMediaType ?? r.media_type;
+    if (mediaType !== 'movie' && mediaType !== 'tv') continue;
+    const key = `${mediaType}:${r.id}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      results.push({ ...r, media_type: mediaType });
     }
   }
   return results;
@@ -123,13 +133,15 @@ async function resolveByTitleSearch(
   query: TitleQuery,
   settings: Settings,
 ): Promise<ResolutionResult | null> {
-  const mediaType = query.mediaType ?? 'movie';
-  validateMediaType(mediaType);
-  const endpoint = mediaType === 'tv' ? '/search/tv' : '/search/movie';
+  const { mediaType } = query;
+  if (mediaType) validateMediaType(mediaType);
+  // Netflix, Prime Video and context-menu lookups can't tell a movie from a
+  // series; /search/multi covers both (it takes no `year`, ranking uses it).
+  const endpoint = mediaType ? `/search/${mediaType}` : '/search/multi';
   const baseParams: Record<string, string> = { query: query.title };
-  if (query.year) baseParams.year = String(query.year);
+  if (query.year && mediaType) baseParams.year = String(query.year);
 
-  const results = await fetchBilingualResults(endpoint, baseParams, settings);
+  const results = await fetchBilingualResults(endpoint, baseParams, settings, mediaType);
   dbg(
     'tmdb',
     `search "${query.title}" year:${query.year} → ${results.length} results`,
@@ -163,7 +175,7 @@ async function resolveByTitleSearch(
   const chosen = best.item;
   let imdbId: string | undefined;
   try {
-    const extIds = await tmdbFetch(`/${mediaType}/${chosen.id}/external_ids`, {}, settings);
+    const extIds = await tmdbFetch(`/${chosen.media_type}/${chosen.id}/external_ids`, {}, settings);
     imdbId = extIds.imdb_id || undefined;
   } catch {
     // non-critical
@@ -171,7 +183,7 @@ async function resolveByTitleSearch(
 
   const alternatives: TitleCandidate[] = ranked.slice(1, 1 + MAX_ALTERNATIVES).map((r) => ({
     tmdbId: r.item.id,
-    mediaType,
+    mediaType: r.item.media_type,
     title: r.item.title || r.item.name,
     originalTitle: r.item.original_title || r.item.original_name || undefined,
     year: parseYear(r.item.release_date || r.item.first_air_date),
@@ -182,7 +194,7 @@ async function resolveByTitleSearch(
     resolved: {
       tmdbId: chosen.id,
       imdbId,
-      mediaType,
+      mediaType: chosen.media_type,
       title: chosen.title || chosen.name,
       localizedTitle: chosen.original_title !== chosen.title ? chosen.original_title : undefined,
       year: parseYear(chosen.release_date || chosen.first_air_date),
