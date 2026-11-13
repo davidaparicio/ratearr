@@ -39,7 +39,7 @@ Ratearr does **not** operate a backend server. Your browser communicates directl
 
 All data is stored locally in your browser using the Web Extensions Storage API:
 
-- **API keys** (TMDB, OMDb) — stored in `browser.storage.sync` so they sync across your browser instances if sync is enabled. You can clear them from the extension's options page.
+- **API keys** (TMDB, OMDb) — stored in `browser.storage.sync` so they sync across your browser instances if sync is enabled. You can clear them from the extension's options page. They are not included in exported settings files.
 - **Cached ratings** — stored in `browser.storage.local` with a configurable TTL (default 24 hours). You can clear the cache from the options page at any time.
 - **Settings** (enabled sources, weights, theme, badge thresholds, cache TTL) — stored in `browser.storage.sync`.
 

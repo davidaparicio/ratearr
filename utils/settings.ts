@@ -128,3 +128,15 @@ export function weightChoices(current: number): number[] {
   if (STANDARD_WEIGHTS.includes(current)) return STANDARD_WEIGHTS;
   return [...STANDARD_WEIGHTS, current].sort((a, b) => a - b);
 }
+
+/**
+ * Settings as written to an export file: without the API keys, which are
+ * secrets and shouldn't end up in a file that gets shared or backed up.
+ * Importing such a file keeps the keys already configured.
+ */
+export function exportableSettings(
+  settings: Settings,
+): Omit<Settings, 'tmdbApiKey' | 'omdbApiKey'> {
+  const { tmdbApiKey: _tmdb, omdbApiKey: _omdb, ...rest } = settings;
+  return rest;
+}

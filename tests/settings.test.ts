@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   DEFAULT_SETTINGS,
+  exportableSettings,
   getSettings,
   parseBadgeThresholds,
   sanitizeSettings,
@@ -112,5 +113,29 @@ describe('weightChoices', () => {
   it('keeps a non-standard current weight (e.g. imported) selectable, in order', () => {
     expect(weightChoices(3)).toEqual([0.5, 1, 1.5, 2, 3]);
     expect(weightChoices(0)).toEqual([0, 0.5, 1, 1.5, 2]);
+  });
+});
+
+describe('exportableSettings', () => {
+  it('leaves the API keys out of exported settings', () => {
+    const exported = exportableSettings({
+      ...DEFAULT_SETTINGS,
+      tmdbApiKey: 'secret',
+      omdbApiKey: 'secret',
+    });
+    expect(exported).not.toHaveProperty('tmdbApiKey');
+    expect(exported).not.toHaveProperty('omdbApiKey');
+    expect(exported.enabledSources).toEqual(DEFAULT_SETTINGS.enabledSources);
+  });
+
+  it('keeps the configured keys when a key-less export is imported', async () => {
+    await browser.storage.sync.clear();
+    await saveSettings({ tmdbApiKey: 'mine', theme: 'light' });
+    await saveSettings(
+      sanitizeSettings(exportableSettings({ ...DEFAULT_SETTINGS, theme: 'dark' })),
+    );
+    const settings = await getSettings();
+    expect(settings.tmdbApiKey).toBe('mine');
+    expect(settings.theme).toBe('dark');
   });
 });

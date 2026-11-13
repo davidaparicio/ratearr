@@ -2,6 +2,7 @@ import { clearCache } from '../../utils/cache';
 import { applyI18n, t } from '../../utils/i18n';
 import {
   DEFAULT_SETTINGS,
+  exportableSettings,
   getSettings,
   parseBadgeThresholds,
   type Settings,
@@ -185,7 +186,7 @@ async function init() {
   const exportBtn = document.createElement('button');
   exportBtn.textContent = t('options_export');
   exportBtn.addEventListener('click', async () => {
-    const current = await getSettings();
+    const current = exportableSettings(await getSettings());
     const blob = new Blob([JSON.stringify(current, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
