@@ -5,7 +5,7 @@ export default defineConfig({
     name: '__MSG_extName__',
     description: '__MSG_extDescription__',
     default_locale: 'en',
-    permissions: ['storage', 'activeTab', 'contextMenus'],
+    permissions: ['storage', 'contextMenus'],
     icons: {
       16: 'icon/icon-16.png',
       32: 'icon/icon-32.png',
@@ -33,7 +33,6 @@ export default defineConfig({
           strict_min_version: '121.0',
           data_collection_permissions: {
             required: ['none'],
-            optional: ['technicalAndInteraction'],
           },
         },
       },
