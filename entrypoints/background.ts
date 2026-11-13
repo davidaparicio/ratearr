@@ -99,18 +99,19 @@ async function handleTitleDetected(
       resolution = await resolveTitle(query, settings);
     } catch (err) {
       console.warn('Ratearr: resolution failed', err);
+      if (tabGenerations.get(tabId) !== gen) return;
       await setTabState(tabId, { state: 'error', data: null, query });
       updateBadge(tabId, undefined);
       return;
     }
+    // A newer lookup started for this tab while resolving; its result wins.
+    if (tabGenerations.get(tabId) !== gen) return;
     if (!resolution) {
       dbg('pipeline', 'no resolution found');
       await setTabState(tabId, { state: 'not-found', data: null, query });
       updateBadge(tabId, undefined);
       return;
     }
-
-    if (tabGenerations.get(tabId) !== gen) return;
 
     const { resolved, alternatives } = resolution;
     const candidates = buildCandidates(resolved, alternatives, previousCandidates);
