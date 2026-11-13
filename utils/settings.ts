@@ -120,3 +120,11 @@ export function parseBadgeThresholds(
   const yellow = parseThreshold(yellowRaw, DEFAULT_SETTINGS.badgeYellowMin);
   return { badgeGreenMin: Math.max(green, yellow), badgeYellowMin: Math.min(green, yellow) };
 }
+
+const STANDARD_WEIGHTS = [0.5, 1, 1.5, 2];
+
+/** Weights offered for a source; includes `current` so an imported value isn't lost on save. */
+export function weightChoices(current: number): number[] {
+  if (STANDARD_WEIGHTS.includes(current)) return STANDARD_WEIGHTS;
+  return [...STANDARD_WEIGHTS, current].sort((a, b) => a - b);
+}

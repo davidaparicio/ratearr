@@ -7,6 +7,7 @@ import {
   type Settings,
   sanitizeSettings,
   saveSettings,
+  weightChoices,
 } from '../../utils/settings';
 import { applyTheme } from '../../utils/theme';
 import type { SourceId } from '../../utils/types';
@@ -75,11 +76,12 @@ async function init() {
     const weight = document.createElement('select');
     weight.className = 'weight-select';
     weight.dataset.weightSource = src.id;
-    for (const w of [0.5, 1, 1.5, 2]) {
+    const currentWeight = settings.sourceWeights[src.id] ?? 1;
+    for (const w of weightChoices(currentWeight)) {
       const opt = document.createElement('option');
       opt.value = String(w);
       opt.textContent = `×${w}`;
-      opt.selected = (settings.sourceWeights[src.id] ?? 1) === w;
+      opt.selected = currentWeight === w;
       weight.appendChild(opt);
     }
     row.appendChild(weight);

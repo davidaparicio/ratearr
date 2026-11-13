@@ -5,6 +5,7 @@ import {
   parseBadgeThresholds,
   sanitizeSettings,
   saveSettings,
+  weightChoices,
 } from '../utils/settings';
 
 describe('sanitizeSettings', () => {
@@ -100,5 +101,16 @@ describe('parseBadgeThresholds', () => {
 
   it('keeps green at or above yellow by swapping reversed thresholds', () => {
     expect(parseBadgeThresholds('5', '7.5')).toEqual({ badgeGreenMin: 7.5, badgeYellowMin: 5 });
+  });
+});
+
+describe('weightChoices', () => {
+  it('offers the standard weights', () => {
+    expect(weightChoices(1)).toEqual([0.5, 1, 1.5, 2]);
+  });
+
+  it('keeps a non-standard current weight (e.g. imported) selectable, in order', () => {
+    expect(weightChoices(3)).toEqual([0.5, 1, 1.5, 2, 3]);
+    expect(weightChoices(0)).toEqual([0, 0.5, 1, 1.5, 2]);
   });
 });
