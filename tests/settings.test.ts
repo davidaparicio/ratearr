@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, getSettings, sanitizeSettings, saveSettings } from '../utils/settings';
+import {
+  DEFAULT_SETTINGS,
+  getSettings,
+  parseBadgeThresholds,
+  sanitizeSettings,
+  saveSettings,
+} from '../utils/settings';
 
 describe('sanitizeSettings', () => {
   it('keeps well-typed known fields', () => {
@@ -73,5 +79,26 @@ describe('getSettings / saveSettings', () => {
     expect(settings.enabledSources.telerama).toBe(true);
     expect(settings.enabledSources.imdb).toBe(false);
     expect(settings.enabledSources.tmdb).toBe(true);
+  });
+});
+
+describe('parseBadgeThresholds', () => {
+  it('accepts 0 as a threshold', () => {
+    expect(parseBadgeThresholds('0', '0')).toEqual({ badgeGreenMin: 0, badgeYellowMin: 0 });
+  });
+
+  it('falls back to the defaults for empty or invalid input', () => {
+    expect(parseBadgeThresholds('', 'abc')).toEqual({
+      badgeGreenMin: DEFAULT_SETTINGS.badgeGreenMin,
+      badgeYellowMin: DEFAULT_SETTINGS.badgeYellowMin,
+    });
+  });
+
+  it('clamps to 0–10', () => {
+    expect(parseBadgeThresholds('12', '-3')).toEqual({ badgeGreenMin: 10, badgeYellowMin: 0 });
+  });
+
+  it('keeps green at or above yellow by swapping reversed thresholds', () => {
+    expect(parseBadgeThresholds('5', '7.5')).toEqual({ badgeGreenMin: 7.5, badgeYellowMin: 5 });
   });
 });

@@ -3,6 +3,7 @@ import { applyI18n, t } from '../../utils/i18n';
 import {
   DEFAULT_SETTINGS,
   getSettings,
+  parseBadgeThresholds,
   type Settings,
   sanitizeSettings,
   saveSettings,
@@ -240,8 +241,11 @@ async function init() {
       if (w !== 1) weights[sel.dataset.weightSource as SourceId] = w;
     }
     newSettings.sourceWeights = weights;
-    newSettings.badgeGreenMin = Math.max(0, Math.min(10, parseFloat(greenInput.value) || 7));
-    newSettings.badgeYellowMin = Math.max(0, Math.min(10, parseFloat(yellowInput.value) || 5));
+    const thresholds = parseBadgeThresholds(greenInput.value, yellowInput.value);
+    Object.assign(newSettings, thresholds);
+    // Show what was actually saved (clamped, or swapped if entered the wrong way round).
+    greenInput.value = String(thresholds.badgeGreenMin);
+    yellowInput.value = String(thresholds.badgeYellowMin);
 
     const tmdbInput = document.getElementById('tmdb-key') as HTMLInputElement;
     const omdbInput = document.getElementById('omdb-key') as HTMLInputElement;

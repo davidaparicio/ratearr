@@ -104,3 +104,19 @@ export async function saveSettings(settings: Partial<Settings>): Promise<void> {
   const current = await getSettings();
   await browser.storage.sync.set({ settings: mergeSettings(current, sanitizeSettings(settings)) });
 }
+
+function parseThreshold(raw: string, fallback: number): number {
+  const value = parseFloat(raw);
+  // `|| fallback` would also replace a legitimate 0
+  return Number.isFinite(value) ? Math.max(0, Math.min(10, value)) : fallback;
+}
+
+/** Badge thresholds from the options form, kept in 0–10 with green ≥ yellow. */
+export function parseBadgeThresholds(
+  greenRaw: string,
+  yellowRaw: string,
+): Pick<Settings, 'badgeGreenMin' | 'badgeYellowMin'> {
+  const green = parseThreshold(greenRaw, DEFAULT_SETTINGS.badgeGreenMin);
+  const yellow = parseThreshold(yellowRaw, DEFAULT_SETTINGS.badgeYellowMin);
+  return { badgeGreenMin: Math.max(green, yellow), badgeYellowMin: Math.min(green, yellow) };
+}
