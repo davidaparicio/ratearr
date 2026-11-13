@@ -1,6 +1,15 @@
 import { clearCache } from '../../utils/cache';
 import { applyI18n, t } from '../../utils/i18n';
-import { DEFAULT_SETTINGS, getSettings, type Settings, saveSettings } from '../../utils/settings';
+import {
+  DEFAULT_SETTINGS,
+  exportableSettings,
+  getSettings,
+  parseBadgeThresholds,
+  type Settings,
+  sanitizeSettings,
+  saveSettings,
+  weightChoices,
+} from '../../utils/settings';
 import { applyTheme } from '../../utils/theme';
 import type { SourceId } from '../../utils/types';
 
@@ -68,11 +77,13 @@ async function init() {
     const weight = document.createElement('select');
     weight.className = 'weight-select';
     weight.dataset.weightSource = src.id;
-    for (const w of [0.5, 1, 1.5, 2]) {
+    weight.setAttribute('aria-label', t('options_weightFor', t(src.labelKey)));
+    const currentWeight = settings.sourceWeights[src.id] ?? 1;
+    for (const w of weightChoices(currentWeight)) {
       const opt = document.createElement('option');
       opt.value = String(w);
       opt.textContent = `×${w}`;
-      opt.selected = (settings.sourceWeights[src.id] ?? 1) === w;
+      opt.selected = currentWeight === w;
       weight.appendChild(opt);
     }
     row.appendChild(weight);
@@ -175,7 +186,7 @@ async function init() {
   const exportBtn = document.createElement('button');
   exportBtn.textContent = t('options_export');
   exportBtn.addEventListener('click', async () => {
-    const current = await getSettings();
+    const current = exportableSettings(await getSettings());
     const blob = new Blob([JSON.stringify(current, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -197,7 +208,8 @@ async function init() {
       if (!file) return;
       try {
         const text = await file.text();
-        const imported = JSON.parse(text) as Partial<Settings>;
+        const imported = sanitizeSettings(JSON.parse(text));
+        if (Object.keys(imported).length === 0) throw new Error('no usable settings');
         await saveSettings(imported);
         init();
       } catch {
@@ -213,7 +225,7 @@ async function init() {
   // Save button
   const saveBtn = document.createElement('button');
   saveBtn.className = 'save-btn';
-  saveBtn.textContent = 'Save';
+  saveBtn.textContent = t('options_save');
   saveBtn.addEventListener('click', async () => {
     const newSettings: Partial<Settings> = {
       enabledSources: { ...DEFAULT_SETTINGS.enabledSources },
@@ -233,8 +245,11 @@ async function init() {
       if (w !== 1) weights[sel.dataset.weightSource as SourceId] = w;
     }
     newSettings.sourceWeights = weights;
-    newSettings.badgeGreenMin = Math.max(0, Math.min(10, parseFloat(greenInput.value) || 7));
-    newSettings.badgeYellowMin = Math.max(0, Math.min(10, parseFloat(yellowInput.value) || 5));
+    const thresholds = parseBadgeThresholds(greenInput.value, yellowInput.value);
+    Object.assign(newSettings, thresholds);
+    // Show what was actually saved (clamped, or swapped if entered the wrong way round).
+    greenInput.value = String(thresholds.badgeGreenMin);
+    yellowInput.value = String(thresholds.badgeYellowMin);
 
     const tmdbInput = document.getElementById('tmdb-key') as HTMLInputElement;
     const omdbInput = document.getElementById('omdb-key') as HTMLInputElement;
@@ -272,14 +287,14 @@ function createKeyInput(label: string, value: string, id: string, signupUrl: str
   input.type = 'password';
   input.id = id;
   input.value = value;
-  input.placeholder = 'Enter API key';
+  input.placeholder = t('options_apiKeyPlaceholder');
   row.appendChild(input);
 
   const link = document.createElement('a');
   link.href = signupUrl;
   link.target = '_blank';
   link.rel = 'noopener';
-  link.textContent = 'Get key';
+  link.textContent = t('options_getKey');
   link.className = 'key-link';
   row.appendChild(link);
 

@@ -38,7 +38,7 @@ export interface TitleQuery {
   originalTitle?: string;
   year?: number;
   mediaType?: MediaType;
-  ids: { imdb?: string; tmdb?: number; allocine?: string };
+  ids: { imdb?: string; tmdb?: number };
   sourceSite: string;
 }
 
@@ -47,6 +47,7 @@ export interface ResolvedTitle {
   imdbId?: string;
   mediaType: MediaType;
   title: string;
+  /** Original-language title, when it differs from `title` (tried as a fallback search). */
   localizedTitle?: string;
   year?: number;
   posterPath?: string;
@@ -67,6 +68,8 @@ export interface RatingsPanelData {
   aggregate?: { value: number; scale: 10; sourcesUsed: number };
   watchProviders?: WatchProviderData;
   alternatives?: TitleCandidate[];
+  /** Stable, ordered list including the resolved title, for navigating between suggestions. */
+  candidates?: TitleCandidate[];
   fetchedAt: number;
   fromCache: boolean;
 }

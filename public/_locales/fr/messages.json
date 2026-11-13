@@ -129,6 +129,12 @@
   "err_parse": {
     "message": "Erreur d'analyse"
   },
+  "err_bad_key": {
+    "message": "Clé API invalide"
+  },
+  "err_rate_limit": {
+    "message": "Limite quotidienne atteinte"
+  },
   "options_title": {
     "message": "Paramètres Ratearr"
   },
@@ -149,6 +155,36 @@
   },
   "options_saved": {
     "message": "Paramètres enregistrés."
+  },
+  "popup_openOn": {
+    "message": "Ouvrir sur $SOURCE$",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Poids de $SOURCE$ dans la note globale",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_save": {
+    "message": "Enregistrer"
+  },
+  "options_apiKeyPlaceholder": {
+    "message": "Saisir la clé API"
+  },
+  "options_getKey": {
+    "message": "Obtenir une clé"
+  },
+  "popup_cached": {
+    "message": "en cache"
+  },
+  "popup_cachedHoursAgo": {
+    "message": "en cache depuis $HOURS$ h",
+    "placeholders": {
+      "hours": { "content": "$1" }
+    }
   },
   "options_theme": {
     "message": "Apparence"

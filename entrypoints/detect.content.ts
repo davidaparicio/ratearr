@@ -1,20 +1,20 @@
 import { getDetector } from '../detectors/registry';
+import type { Msg } from '../utils/messages';
 import type { TitleQuery } from '../utils/types';
 
 export default defineContentScript({
+  // Whole hosts, not just title paths: content scripts are only injected on a
+  // document load, so on these SPA sites a title reached by in-app navigation
+  // would otherwise never be seen. Detectors' matches() filter the URLs.
   matches: [
-    '*://*.imdb.com/title/*',
-    '*://www.allocine.fr/film/*',
-    '*://www.allocine.fr/series/*',
-    '*://www.themoviedb.org/movie/*',
-    '*://www.themoviedb.org/tv/*',
-    '*://www.netflix.com/title/*',
-    '*://www.primevideo.com/detail/*',
-    '*://www.disneyplus.com/movies/*',
-    '*://www.disneyplus.com/series/*',
-    '*://letterboxd.com/film/*',
-    '*://www.senscritique.com/film/*',
-    '*://www.senscritique.com/serie/*',
+    '*://*.imdb.com/*',
+    '*://www.allocine.fr/*',
+    '*://www.themoviedb.org/*',
+    '*://www.netflix.com/*',
+    '*://www.primevideo.com/*',
+    '*://www.disneyplus.com/*',
+    '*://letterboxd.com/*',
+    '*://www.senscritique.com/*',
     '*://en.wikipedia.org/wiki/*',
     '*://fr.wikipedia.org/wiki/*',
     '*://es.wikipedia.org/wiki/*',
@@ -32,7 +32,11 @@ export default defineContentScript({
 
       const url = new URL(location.href);
       const detector = getDetector(url.hostname);
-      if (!detector?.matches(url)) return;
+      if (!detector?.matches(url)) {
+        // e.g. an in-site navigation from a title to a listing page
+        clearDetection();
+        return;
+      }
 
       const query = detector.extract(document, url);
       if (query) {
@@ -52,12 +56,24 @@ export default defineContentScript({
         } else if (attempts >= 10) {
           clearInterval(activePoll);
           activePoll = undefined;
+          clearDetection();
         }
       }, 300);
     }
 
+    // Whether the panel currently shows a title this script detected; only then
+    // is there anything to clear (and a context-menu lookup is left alone).
+    let hasDetection = false;
+
     function sendDetection(query: TitleQuery) {
-      browser.runtime.sendMessage({ kind: 'title-detected', query }).catch(() => {});
+      hasDetection = true;
+      browser.runtime.sendMessage({ kind: 'title-detected', query } satisfies Msg).catch(() => {});
+    }
+
+    function clearDetection() {
+      if (!hasDetection) return;
+      hasDetection = false;
+      browser.runtime.sendMessage({ kind: 'title-cleared' } satisfies Msg).catch(() => {});
     }
 
     function onLocationChange() {

@@ -166,6 +166,14 @@
     "message": "Parse error",
     "description": "When response parsing fails"
   },
+  "err_bad_key": {
+    "message": "Invalid API key",
+    "description": "When the provider rejects the configured API key"
+  },
+  "err_rate_limit": {
+    "message": "Daily limit reached",
+    "description": "When the provider's request quota for the API key is used up"
+  },
   "options_title": {
     "message": "Ratearr Settings",
     "description": "Options page title"
@@ -193,6 +201,43 @@
   "options_saved": {
     "message": "Settings saved.",
     "description": "Confirmation after saving"
+  },
+  "popup_openOn": {
+    "message": "Open on $SOURCE$",
+    "description": "Accessible name of the link to a rating source page",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Weight of $SOURCE$ in the overall score",
+    "description": "Accessible name of a source weight menu",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_save": {
+    "message": "Save",
+    "description": "Button that saves the settings"
+  },
+  "options_apiKeyPlaceholder": {
+    "message": "Enter API key",
+    "description": "Placeholder of the API key fields"
+  },
+  "options_getKey": {
+    "message": "Get key",
+    "description": "Link to the page where an API key can be requested"
+  },
+  "popup_cached": {
+    "message": "cached",
+    "description": "Shown when ratings come from the cache"
+  },
+  "popup_cachedHoursAgo": {
+    "message": "cached $HOURS$h ago",
+    "description": "Age of cached ratings, in hours",
+    "placeholders": {
+      "hours": { "content": "$1" }
+    }
   },
   "options_theme": {
     "message": "Appearance",

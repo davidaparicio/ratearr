@@ -5,7 +5,7 @@
 ### Already done
 
 - [x] `manifest.json` with gecko id `ratearr@davidaparicio.fr`
-- [x] `data_collection_permissions` declared (`required: ["none"]`, `optional: ["technicalAndInteraction"]`)
+- [x] `data_collection_permissions` declared (`required: ["none"]`)
 - [x] `strict_min_version: "140.0"` (satisfies `data_collection_permissions` requirement)
 - [x] `web-ext lint` passes (0 errors, 1 Android-only warning)
 - [x] LICENSE file (MIT)

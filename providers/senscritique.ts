@@ -1,6 +1,8 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import { rankByTitleMatch } from '../utils/normalize';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
+import { httpsUrl } from '../utils/url';
 import type { RatingProvider } from './types';
 
 const SC_GRAPHQL = 'https://apollo.senscritique.com/';
@@ -10,7 +12,9 @@ const SC_UNIVERSE_TV = 4;
 
 export interface ScProduct {
   id: number;
+  /** French title. */
   title: string;
+  originalTitle: string | null;
   year_of_production: number | null;
   rating: number | null;
   url: string;
@@ -22,11 +26,11 @@ interface ScProductWithStats extends ScProduct {
   stats: { ratingCount: number };
 }
 
-async function scQuery<T>(query: string): Promise<T> {
-  const resp = await fetch(SC_GRAPHQL, {
+async function scQuery<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
+  const resp = await fetchWithTimeout(SC_GRAPHQL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, variables }),
   });
   if (!resp.ok) throw new Error(`senscritique_http_${resp.status}`);
   const json = await resp.json();
@@ -49,7 +53,7 @@ export function filterAndRankProducts(
 
   const ranked = rankByTitleMatch(products, title, year, {
     getTitle: (p) => p.title,
-    getAltTitle: () => '',
+    getAltTitle: (p) => p.originalTitle ?? '',
     getYear: (p) => p.year_of_production ?? undefined,
   });
 
@@ -71,11 +75,13 @@ async function searchSensCritique(
   mediaType: 'movie' | 'tv',
   year?: number,
 ): Promise<ScProduct | null> {
-  const escaped = title.replace(/"/g, '\\"');
+  // Titles come from page text and selections (quotes, backslashes, newlines),
+  // so pass them as a variable rather than splicing them into the query.
   const data = await scQuery<{
     searchAutocomplete: { items: { product: ScProduct | null }[] };
   }>(
-    `{ searchAutocomplete(keywords: "${escaped}") { items { product { id title year_of_production rating url slug universe } } } }`,
+    'query Search($keywords: String!) { searchAutocomplete(keywords: $keywords) { items { product { id title originalTitle year_of_production rating url slug universe } } } }',
+    { keywords: title },
   );
 
   return filterAndRankProducts(data.searchAutocomplete.items, title, mediaType, year);
@@ -106,10 +112,18 @@ export const senscritiqueProvider: RatingProvider = {
       : [resolved.title];
 
     let product: Awaited<ReturnType<typeof searchSensCritique>> = null;
+    const errors: unknown[] = [];
     for (const t of titlesToTry) {
-      product = await searchSensCritique(t, resolved.mediaType, resolved.year);
+      try {
+        product = await searchSensCritique(t, resolved.mediaType, resolved.year);
+      } catch (err) {
+        errors.push(err);
+        continue;
+      }
       if (product?.rating != null) break;
     }
+    // Every search failed: surface it as a network error rather than "not found".
+    if (errors.length === titlesToTry.length) throw errors[0];
 
     if (!product || product.rating == null) {
       return [{ status: 'unavailable', source: 'senscritique', reasonKey: 'err_not_found' }];
@@ -125,7 +139,8 @@ export const senscritiqueProvider: RatingProvider = {
           value: product.rating,
           scale: 10,
           count,
-          url: `${SC_BASE}${product.url}`,
+          // Concatenating would let a value like "@other.host/" change the link's host.
+          url: httpsUrl(product.url, SC_BASE),
         },
       },
     ];

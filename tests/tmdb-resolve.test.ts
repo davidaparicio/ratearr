@@ -32,9 +32,13 @@ function mockFetch(url: string | URL | Request) {
   const u = new URL(typeof url === 'string' ? url : url.toString());
   const path = u.pathname;
 
-  if (path.includes('/search/movie')) {
+  if (path.includes('/search/movie') || path.includes('/search/multi')) {
     const lang = u.searchParams.get('language');
-    const body = lang === 'fr-FR' ? searchFrFixture : searchEnFixture;
+    const fixture = lang === 'fr-FR' ? searchFrFixture : searchEnFixture;
+    // /search/multi tags each hit with its media type
+    const body = path.includes('/search/multi')
+      ? { ...fixture, results: fixture.results.map((r) => ({ ...r, media_type: 'movie' })) }
+      : fixture;
     return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
   }
 
@@ -140,5 +144,181 @@ describe('resolveTitle — "L\'Agent secret" disambiguation', () => {
     expect(result?.resolved.imdbId).toBe('tt12345678');
     expect(result?.resolved.year).toBe(2025);
     expect(result?.alternatives).toHaveLength(0);
+  });
+});
+
+describe('resolveTitle — accepting a title-search result', () => {
+  function stubSearch(results: { id: number; title: string; release_date?: string }[]) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string | URL | Request) => {
+        const u = new URL(typeof url === 'string' ? url : url.toString());
+        const tagged = results.map((r) => ({ ...r, media_type: 'movie' }));
+        const body = u.pathname.startsWith('/3/search/') ? { results: tagged } : {};
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+      }),
+    );
+  }
+
+  it('rejects unrelated titles even when TMDB returns them for the queried year', async () => {
+    // TMDB filters by `year`, so every result "matches" the year.
+    stubSearch([
+      { id: 1, title: 'Cast Away', release_date: '2000-12-22' },
+      { id: 2, title: 'Gladiator', release_date: '2000-05-01' },
+    ]);
+    const query: TitleQuery = { title: 'Tom Hanks', year: 2000, ids: {}, sourceSite: 'wiki' };
+    expect(await resolveTitle(query, settings)).toBeNull();
+  });
+
+  it('accepts a lone result whose title only matches a translation TMDB knows', async () => {
+    stubSearch([{ id: 278, title: 'The Shawshank Redemption', release_date: '1994-09-23' }]);
+    const query: TitleQuery = { title: 'Die Verurteilten', ids: {}, sourceSite: 'netflix' };
+    expect((await resolveTitle(query, settings))?.resolved.tmdbId).toBe(278);
+  });
+
+  it('prefers the matching title over an unrelated one from the exact year', async () => {
+    stubSearch([
+      { id: 1, title: 'Something Else', release_date: '2021-03-01' },
+      { id: 2, title: 'Dune', release_date: '2022-01-01' },
+    ]);
+    const query: TitleQuery = { title: 'Dune', year: 2021, ids: {}, sourceSite: 'test' };
+    expect((await resolveTitle(query, settings))?.resolved.tmdbId).toBe(2);
+  });
+});
+
+describe('resolveTitle — unknown media type (Netflix, Prime Video, context menu)', () => {
+  const multiResults = [
+    { id: 66732, media_type: 'tv', name: 'Stranger Things', first_air_date: '2016-07-15' },
+    { id: 66732, media_type: 'movie', title: 'Stranger Things Movie', release_date: '2001-01-01' },
+    { id: 5, media_type: 'person', name: 'Stranger Things Fan' },
+  ];
+
+  function stubMulti() {
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const u = new URL(typeof url === 'string' ? url : url.toString());
+      const body = u.pathname === '/3/search/multi' ? { results: multiResults } : {};
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  const query: TitleQuery = { title: 'Stranger Things', ids: {}, sourceSite: 'www.netflix.com' };
+
+  it('finds series as well as movies', async () => {
+    stubMulti();
+    const result = await resolveTitle(query, settings);
+    expect(result?.resolved).toMatchObject({ tmdbId: 66732, mediaType: 'tv' });
+  });
+
+  it('looks up external ids under the media type of the chosen result', async () => {
+    const fetchMock = stubMulti();
+    await resolveTitle(query, settings);
+    const paths = fetchMock.mock.calls.map(([u]) => new URL(String(u)).pathname);
+    expect(paths).toContain('/3/tv/66732/external_ids');
+  });
+
+  it('ignores people and keeps a movie and series that share an id', async () => {
+    stubMulti();
+    const result = await resolveTitle(query, settings);
+    expect(result?.alternatives).toEqual([
+      expect.objectContaining({ tmdbId: 66732, mediaType: 'movie' }),
+    ]);
+  });
+});
+
+describe('resolveTitle — French title on a French site', () => {
+  const en = [
+    {
+      id: 238,
+      title: 'The Godfather',
+      original_title: 'The Godfather',
+      release_date: '1972-03-14',
+    },
+    { id: 240, title: 'The Godfather Part II', release_date: '1974-12-20' },
+  ];
+  const fr = [
+    { id: 238, title: 'Le Parrain', original_title: 'The Godfather', release_date: '1972-03-14' },
+    { id: 240, title: 'Le Parrain, 2e partie', release_date: '1974-12-20' },
+  ];
+
+  it('matches against the French title TMDB returned for the same id', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string | URL | Request) => {
+        const u = new URL(typeof url === 'string' ? url : url.toString());
+        const results = u.searchParams.get('language') === 'fr-FR' ? fr : en;
+        const body = u.pathname.startsWith('/3/search/') ? { results } : {};
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+      }),
+    );
+    const query: TitleQuery = {
+      title: 'Le Parrain',
+      year: 1972,
+      mediaType: 'movie',
+      ids: {},
+      sourceSite: 'www.allocine.fr',
+    };
+
+    const result = await resolveTitle(query, settings);
+    expect(result?.resolved.tmdbId).toBe(238);
+    // The English record is still the one displayed
+    expect(result?.resolved.title).toBe('The Godfather');
+  });
+});
+
+describe('resolveTitle — original title of a series', () => {
+  it('keeps the original name of a TV series as a fallback search title', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string | URL | Request) => {
+        const u = new URL(typeof url === 'string' ? url : url.toString());
+        const results = [
+          {
+            id: 71446,
+            name: 'Money Heist',
+            original_name: 'La casa de papel',
+            first_air_date: '2017-05-02',
+          },
+        ];
+        const body = u.pathname.startsWith('/3/search/') ? { results } : {};
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+      }),
+    );
+    const query: TitleQuery = { title: 'Money Heist', mediaType: 'tv', ids: {}, sourceSite: 't' };
+
+    const result = await resolveTitle(query, settings);
+    expect(result?.resolved.localizedTitle).toBe('La casa de papel');
+  });
+});
+
+describe('resolveTitle — original title from the page', () => {
+  it('searches the original title when the displayed one finds nothing', async () => {
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const u = new URL(typeof url === 'string' ? url : url.toString());
+      const results =
+        u.searchParams.get('query') === 'Gisaengchung'
+          ? [
+              {
+                id: 496243,
+                title: 'Parasite',
+                original_title: 'Gisaengchung',
+                release_date: '2019-05-30',
+              },
+            ]
+          : [];
+      const body = u.pathname.startsWith('/3/search/') ? { results } : {};
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const query: TitleQuery = {
+      title: 'Parasite (Version Noir et Blanc)',
+      originalTitle: 'Gisaengchung',
+      mediaType: 'movie',
+      ids: {},
+      sourceSite: 'www.allocine.fr',
+    };
+
+    expect((await resolveTitle(query, settings))?.resolved.tmdbId).toBe(496243);
   });
 });

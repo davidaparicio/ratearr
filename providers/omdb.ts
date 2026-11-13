@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import type { Settings } from '../utils/settings';
 import type { Rating, RatingResult, ResolvedTitle, SourceId } from '../utils/types';
 import type { RatingProvider } from './types';
@@ -112,7 +113,18 @@ export const omdbProvider: RatingProvider = {
     url.searchParams.set('i', resolved.imdbId);
     url.searchParams.set('apikey', settings.omdbApiKey);
 
-    const resp = await fetch(url.toString());
+    const resp = await fetchWithTimeout(url.toString());
+    // OMDb answers both a bad key and an exhausted daily quota with 401.
+    if (resp.status === 401) {
+      const error = ((await resp.json().catch(() => ({}))) as OmdbResponse).Error ?? '';
+      const reasonKey = /limit/i.test(error) ? 'err_rate_limit' : 'err_bad_key';
+      dbg('omdb', `401: ${error}`);
+      return this.produces.map((source: SourceId) => ({
+        status: 'unavailable' as const,
+        source,
+        reasonKey,
+      }));
+    }
     if (!resp.ok) throw new Error(`omdb_http_${resp.status}`);
     const data: OmdbResponse = await resp.json();
     dbg(

@@ -155,6 +155,30 @@ describe('parseSearchPageEntities', () => {
     expect(parseSearchPageEntities(html, 'Juste ciel !', 'movie')).toBeNull();
   });
 
+  it('prefers an exact title over one that merely contains it', () => {
+    const html = makeHtml({
+      [btoa('Movie:1')]: { title: 'Alien vs. Predator', releaseDate: '2004-10-27T00:00:00+02:00' },
+      [btoa('Movie:62')]: { title: 'Alien', releaseDate: '1979-09-12T00:00:00+02:00' },
+    });
+    expect(parseSearchPageEntities(html, 'Alien', 'movie')).toBe('62');
+  });
+
+  it('uses the release year to choose between equally good titles', () => {
+    // Live shapes from /rechercher/?q=Alien: the 1979 film is listed under its French title.
+    const html = makeHtml({
+      [btoa('Movie:208314')]: {
+        title: 'Alien: Covenant',
+        releaseDate: '2017-05-10T00:00:00+02:00',
+      },
+      [btoa('Movie:62')]: {
+        title: 'Alien, le huitième passager',
+        releaseDate: '1979-09-12T00:00:00+02:00',
+      },
+    });
+    expect(parseSearchPageEntities(html, 'Alien', 'movie', 1979)).toBe('62');
+    expect(parseSearchPageEntities(html, 'Alien', 'movie', 2017)).toBe('208314');
+  });
+
   it('filters by media type prefix', () => {
     const key = btoa('TVSeries:999');
     const html = makeHtml({ [key]: { title: 'Juste ciel !' } });

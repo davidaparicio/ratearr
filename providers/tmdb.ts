@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import { rankByTitleMatch } from '../utils/normalize';
 import type { Settings } from '../utils/settings';
 import type {
@@ -35,7 +36,7 @@ async function tmdbFetch(
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
-  const resp = await fetch(url.toString());
+  const resp = await fetchWithTimeout(url.toString());
   if (!resp.ok) throw new Error(`tmdb_http_${resp.status}`);
   return resp.json();
 }
@@ -43,6 +44,12 @@ async function tmdbFetch(
 export interface ResolutionResult {
   resolved: ResolvedTitle;
   alternatives: TitleCandidate[];
+}
+
+/** The original-language title when it differs from the displayed one (movies and series). */
+function originalTitleOf(r: any): string | undefined {
+  const original = r.original_title || r.original_name;
+  return original && original !== (r.title || r.name) ? original : undefined;
 }
 
 function parseYear(dateStr?: string): number | undefined {
@@ -54,15 +61,17 @@ function parseYear(dateStr?: string): number | undefined {
 async function resolveByTmdbId(query: TitleQuery, settings: Settings): Promise<ResolutionResult> {
   const mediaType = query.mediaType ?? 'movie';
   validateMediaType(mediaType);
-  const data = await tmdbFetch(`/${mediaType}/${query.ids.tmdb}`, { language: 'en-US' }, settings);
-  const extIds = await tmdbFetch(`/${mediaType}/${query.ids.tmdb}/external_ids`, {}, settings);
+  const [data, extIds] = await Promise.all([
+    tmdbFetch(`/${mediaType}/${query.ids.tmdb}`, { language: 'en-US' }, settings),
+    tmdbFetch(`/${mediaType}/${query.ids.tmdb}/external_ids`, {}, settings),
+  ]);
   return {
     resolved: {
       tmdbId: query.ids.tmdb!,
       imdbId: extIds.imdb_id || undefined,
       mediaType,
       title: data.title || data.name || query.title,
-      localizedTitle: data.original_title !== data.title ? data.original_title : undefined,
+      localizedTitle: originalTitleOf(data),
       year: parseYear(data.release_date || data.first_air_date),
       posterPath: data.poster_path || undefined,
     },
@@ -86,7 +95,7 @@ async function resolveByImdbId(
       imdbId: query.ids.imdb,
       mediaType,
       title: result.title || result.name,
-      localizedTitle: result.original_title !== result.title ? result.original_title : undefined,
+      localizedTitle: originalTitleOf(result),
       year: parseYear(result.release_date || result.first_air_date),
       posterPath: result.poster_path || undefined,
     },
@@ -94,40 +103,57 @@ async function resolveByImdbId(
   };
 }
 
+const MAX_ALTERNATIVES = 7;
+
+/**
+ * Searches in English and French and merges the hits, each tagged with its
+ * `media_type`: taken from the hit for /search/multi (people are dropped), or
+ * `endpointMediaType` for the typed endpoints. The English record is kept; the
+ * French title of the same id goes in `other_titles` so French queries match.
+ */
 async function fetchBilingualResults(
   endpoint: string,
   baseParams: Record<string, string>,
   settings: Settings,
+  endpointMediaType?: MediaType,
 ): Promise<any[]> {
   const [dataEn, dataFr] = await Promise.all([
     tmdbFetch(endpoint, { ...baseParams, language: 'en-US' }, settings),
     tmdbFetch(endpoint, { ...baseParams, language: 'fr-FR' }, settings),
   ]);
 
-  const seenIds = new Set<number>();
-  const results: any[] = [];
+  // Movie and TV ids are separate namespaces, so dedupe on both.
+  const byKey = new Map<string, any>();
   const enResults = Array.isArray(dataEn.results) ? dataEn.results : [];
   const frResults = Array.isArray(dataFr.results) ? dataFr.results : [];
   for (const r of [...enResults, ...frResults]) {
-    if (!seenIds.has(r.id)) {
-      seenIds.add(r.id);
-      results.push(r);
+    const mediaType = endpointMediaType ?? r.media_type;
+    if (mediaType !== 'movie' && mediaType !== 'tv') continue;
+    const key = `${mediaType}:${r.id}`;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...r, media_type: mediaType, other_titles: [] });
+    } else {
+      const title = r.title || r.name;
+      if (title && title !== (existing.title || existing.name)) existing.other_titles.push(title);
     }
   }
-  return results;
+  return [...byKey.values()];
 }
 
 async function resolveByTitleSearch(
   query: TitleQuery,
   settings: Settings,
 ): Promise<ResolutionResult | null> {
-  const mediaType = query.mediaType ?? 'movie';
-  validateMediaType(mediaType);
-  const endpoint = mediaType === 'tv' ? '/search/tv' : '/search/movie';
+  const { mediaType } = query;
+  if (mediaType) validateMediaType(mediaType);
+  // Netflix, Prime Video and context-menu lookups can't tell a movie from a
+  // series; /search/multi covers both (it takes no `year`, ranking uses it).
+  const endpoint = mediaType ? `/search/${mediaType}` : '/search/multi';
   const baseParams: Record<string, string> = { query: query.title };
-  if (query.year) baseParams.year = String(query.year);
+  if (query.year && mediaType) baseParams.year = String(query.year);
 
-  const results = await fetchBilingualResults(endpoint, baseParams, settings);
+  const results = await fetchBilingualResults(endpoint, baseParams, settings, mediaType);
   dbg(
     'tmdb',
     `search "${query.title}" year:${query.year} → ${results.length} results`,
@@ -141,10 +167,11 @@ async function resolveByTitleSearch(
   const ranked = rankByTitleMatch(results, query.title, query.year, {
     getTitle: (r) => r.title || r.name || '',
     getAltTitle: (r) => r.original_title || r.original_name || '',
+    getOtherTitles: (r) => r.other_titles,
     getYear: (r) => parseYear(r.release_date || r.first_air_date),
   }).sort((a, b) => {
-    if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;
     if (a.score !== b.score) return b.score - a.score;
+    if (a.yearMatch !== b.yearMatch) return a.yearMatch ? -1 : 1;
     return (b.item.popularity || 0) - (a.item.popularity || 0);
   });
 
@@ -153,20 +180,23 @@ async function resolveByTitleSearch(
     'tmdb',
     `best: "${best.item.title || best.item.name}" score:${best.score} yearMatch:${best.yearMatch}`,
   );
-  if (best.score === 0 && !best.yearMatch) return null;
+  // The `year` search param already filters by year, so a year match says
+  // nothing about the title. With no title match, trust TMDB only when it
+  // returned a single hit (it also searches translations we don't receive).
+  if (best.score === 0 && results.length > 1) return null;
 
   const chosen = best.item;
   let imdbId: string | undefined;
   try {
-    const extIds = await tmdbFetch(`/${mediaType}/${chosen.id}/external_ids`, {}, settings);
+    const extIds = await tmdbFetch(`/${chosen.media_type}/${chosen.id}/external_ids`, {}, settings);
     imdbId = extIds.imdb_id || undefined;
   } catch {
     // non-critical
   }
 
-  const alternatives: TitleCandidate[] = ranked.slice(1, 4).map((r) => ({
+  const alternatives: TitleCandidate[] = ranked.slice(1, 1 + MAX_ALTERNATIVES).map((r) => ({
     tmdbId: r.item.id,
-    mediaType,
+    mediaType: r.item.media_type,
     title: r.item.title || r.item.name,
     originalTitle: r.item.original_title || r.item.original_name || undefined,
     year: parseYear(r.item.release_date || r.item.first_air_date),
@@ -177,9 +207,9 @@ async function resolveByTitleSearch(
     resolved: {
       tmdbId: chosen.id,
       imdbId,
-      mediaType,
+      mediaType: chosen.media_type,
       title: chosen.title || chosen.name,
-      localizedTitle: chosen.original_title !== chosen.title ? chosen.original_title : undefined,
+      localizedTitle: originalTitleOf(chosen),
       year: parseYear(chosen.release_date || chosen.first_air_date),
       posterPath: chosen.poster_path || undefined,
     },
@@ -193,7 +223,12 @@ export async function resolveTitle(
 ): Promise<ResolutionResult | null> {
   if (query.ids.tmdb) return resolveByTmdbId(query, settings);
   if (query.ids.imdb) return resolveByImdbId(query, settings);
-  return resolveByTitleSearch(query, settings);
+  const byTitle = await resolveByTitleSearch(query, settings);
+  // e.g. a localized or re-release title the page shows, with the original alongside
+  if (!byTitle && query.originalTitle && query.originalTitle !== query.title) {
+    return resolveByTitleSearch({ ...query, title: query.originalTitle }, settings);
+  }
+  return byTitle;
 }
 
 function detectCountry(): string {

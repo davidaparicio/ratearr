@@ -23,6 +23,52 @@ export function getEnabledProviders(settings: Settings): RatingProvider[] {
   });
 }
 
+/** Display order of sources: the order providers are listed in, then their `produces`. */
+const SOURCE_ORDER: SourceId[] = ALL_PROVIDERS.flatMap((p) => p.produces);
+
+function sourceOf(result: RatingResult): SourceId {
+  return result.status === 'ok' ? result.rating.source : result.source;
+}
+
+/** Reasons a later attempt may succeed (the key may also have been fixed meanwhile). */
+const RETRYABLE_REASONS = new Set(['err_network', 'err_rate_limit', 'err_bad_key']);
+
+/**
+ * Enabled providers that a cached entry can't answer for: one of their enabled
+ * sources was never fetched (enabled after caching), failed in a way worth
+ * retrying, or was cached as "no key" and the key has since been added.
+ */
+export function providersToRefetch(cached: RatingResult[], settings: Settings): RatingProvider[] {
+  const bySource = new Map(cached.map((r) => [sourceOf(r), r]));
+  return getEnabledProviders(settings).filter((p) =>
+    p.produces.some((source) => {
+      if (!settings.enabledSources[source]) return false;
+      const result = bySource.get(source);
+      if (!result) return true;
+      if (result.status === 'ok') return false;
+      if (RETRYABLE_REASONS.has(result.reasonKey)) return true;
+      return result.reasonKey === 'err_no_key' && p.isConfigured(settings);
+    }),
+  );
+}
+
+/** Cached results with `fresh` ones taking precedence per source, in display order. */
+export function mergeResults(cached: RatingResult[], fresh: RatingResult[]): RatingResult[] {
+  const bySource = new Map(cached.map((r) => [sourceOf(r), r]));
+  for (const r of fresh) bySource.set(sourceOf(r), r);
+  return [...bySource.values()].sort(
+    (a, b) => SOURCE_ORDER.indexOf(sourceOf(a)) - SOURCE_ORDER.indexOf(sourceOf(b)),
+  );
+}
+
+/**
+ * A provider runs when any of its sources is enabled, but it returns all of
+ * them; drop the ones the user turned off so they are neither shown nor aggregated.
+ */
+export function keepEnabledSources(results: RatingResult[], settings: Settings): RatingResult[] {
+  return results.filter((r) => settings.enabledSources[sourceOf(r)]);
+}
+
 export function unavailableResults(provider: RatingProvider, reasonKey: string): RatingResult[] {
   return provider.produces.map((source: SourceId) => ({
     status: 'unavailable' as const,

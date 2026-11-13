@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { parseOmdbResponse } from '../providers/omdb';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { omdbProvider, parseOmdbResponse } from '../providers/omdb';
+import { DEFAULT_SETTINGS } from '../utils/settings';
 import inceptionFixture from './fixtures/omdb-inception.json';
 import naFixture from './fixtures/omdb-na-ratings.json';
 import notFoundFixture from './fixtures/omdb-not-found.json';
@@ -46,5 +47,47 @@ describe('parseOmdbResponse', () => {
       (r) => 'source' in r && r.status === 'unavailable' && r.source === 'imdb',
     );
     expect(imdb).toBeDefined();
+  });
+});
+
+describe('omdbProvider.fetchRatings — HTTP 401', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const resolved = {
+    tmdbId: 1,
+    imdbId: 'tt1375666',
+    mediaType: 'movie' as const,
+    title: 'Inception',
+  };
+  const settings = { ...DEFAULT_SETTINGS, omdbApiKey: 'key' };
+
+  function stub401(error: string) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ Response: 'False', Error: error }), { status: 401 }),
+      ),
+    );
+  }
+
+  it('reports an invalid key as such, not as a network error', async () => {
+    stub401('Invalid API key!');
+    const results = await omdbProvider.fetchRatings(resolved, settings);
+    expect(results.map((r) => r.status === 'unavailable' && r.reasonKey)).toEqual([
+      'err_bad_key',
+      'err_bad_key',
+      'err_bad_key',
+    ]);
+  });
+
+  it('reports the daily request limit', async () => {
+    stub401('Request limit reached!');
+    const results = await omdbProvider.fetchRatings(resolved, settings);
+    expect(
+      results.every((r) => r.status === 'unavailable' && r.reasonKey === 'err_rate_limit'),
+    ).toBe(true);
   });
 });

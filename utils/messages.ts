@@ -5,6 +5,7 @@ export type PanelState = 'idle' | 'loading' | 'ready' | 'no-title' | 'error' | '
 
 export type Msg =
   | { kind: 'title-detected'; query: TitleQuery }
+  | { kind: 'title-cleared' }
   | { kind: 'get-panel-data'; tabId: number }
   | { kind: 'refresh'; tabId: number }
   | { kind: 'select-alternative'; tabId: number; tmdbId: number; mediaType: MediaType }

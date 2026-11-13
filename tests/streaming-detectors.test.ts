@@ -22,6 +22,22 @@ describe('netflixDetector', () => {
   });
 });
 
+describe('disneyPlusDetector — entity URLs', () => {
+  it('matches /browse/entity- title URLs', () => {
+    expect(
+      disneyPlusDetector.matches(
+        new URL('https://www.disneyplus.com/browse/entity-7df81cf5-6be5-4e05-9ff6-da33baf0b94d'),
+      ),
+    ).toBe(true);
+  });
+
+  it('does not match other browse pages', () => {
+    expect(disneyPlusDetector.matches(new URL('https://www.disneyplus.com/browse/movies'))).toBe(
+      false,
+    );
+  });
+});
+
 describe('primeVideoDetector', () => {
   it('matches /detail/ URLs', () => {
     expect(

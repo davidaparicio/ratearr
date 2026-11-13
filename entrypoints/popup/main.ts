@@ -2,6 +2,7 @@ import { applyI18n, t } from '../../utils/i18n';
 import type { Msg, PanelState } from '../../utils/messages';
 import { applyTheme } from '../../utils/theme';
 import type { RatingResult, RatingsPanelData, WatchProviderData } from '../../utils/types';
+import { httpsUrl } from '../../utils/url';
 
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/w92';
 const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w45';
@@ -45,7 +46,9 @@ async function init() {
 }
 
 let pollCount = 0;
-const MAX_POLL = 15;
+// Worst case is ~20s: resolution (two sequential 6s-capped requests) then the
+// providers (8s cap); stop polling only after that.
+const MAX_POLL = 25;
 
 function render(app: HTMLElement, state: PanelState, data: RatingsPanelData | null, tabId: number) {
   if (state === 'loading') {
@@ -225,13 +228,19 @@ function renderOkRatingRow(result: Extract<RatingResult, { status: 'ok' }>): HTM
     row.appendChild(count);
   }
 
-  if (result.rating.url) {
+  const ratingUrl = result.rating.url && httpsUrl(result.rating.url);
+  if (ratingUrl) {
     const link = document.createElement('a');
-    link.href = result.rating.url;
+    link.href = ratingUrl;
     link.target = '_blank';
     link.rel = 'noopener';
     link.className = 'source-link';
     link.textContent = '↗';
+    link.setAttribute(
+      'aria-label',
+      t('popup_openOn', t(SOURCE_LABELS[result.rating.source] || result.rating.source)),
+    );
+    link.title = link.getAttribute('aria-label')!;
     row.appendChild(link);
   }
 
@@ -254,11 +263,13 @@ function renderUnavailableRatingRow(
   reason.textContent = t(result.reasonKey);
   row.appendChild(reason);
 
-  if (result.reasonKey === 'err_no_key') {
+  if (result.reasonKey === 'err_no_key' || result.reasonKey === 'err_bad_key') {
     const link = document.createElement('a');
     link.href = '#';
     link.className = 'options-link';
     link.textContent = '⚙';
+    link.setAttribute('aria-label', t('popup_openSettings'));
+    link.title = t('popup_openSettings');
     link.addEventListener('click', (e) => {
       e.preventDefault();
       browser.runtime.openOptionsPage();
@@ -397,9 +408,10 @@ function renderWatchProviders(wp: WatchProviderData | undefined): HTMLElement | 
   headerText.textContent = t('popup_whereToWatch');
   header.appendChild(headerText);
 
-  if (wp.link) {
+  const allUrl = wp.link && httpsUrl(wp.link);
+  if (allUrl) {
     const allLink = document.createElement('a');
-    allLink.href = wp.link;
+    allLink.href = allUrl;
     allLink.target = '_blank';
     allLink.rel = 'noopener';
     allLink.className = 'wp-all-link';
@@ -466,7 +478,8 @@ function renderAlternatives(
   tabId: number,
   app: HTMLElement,
 ): HTMLElement | null {
-  if (!data.alternatives || data.alternatives.length === 0) return null;
+  const candidates = data.candidates ?? data.alternatives ?? [];
+  if (candidates.length === 0 || (data.candidates && candidates.length < 2)) return null;
 
   const section = document.createElement('div');
   section.className = 'alternatives';
@@ -475,9 +488,15 @@ function renderAlternatives(
   header.textContent = t('popup_didYouMean');
   section.appendChild(header);
 
-  for (const alt of data.alternatives) {
+  for (const alt of candidates) {
+    const isActive =
+      alt.tmdbId === data.resolved.tmdbId && alt.mediaType === data.resolved.mediaType;
     const row = document.createElement('button');
-    row.className = 'alt-row';
+    row.className = isActive ? 'alt-row alt-active' : 'alt-row';
+    if (isActive) {
+      row.disabled = true;
+      row.setAttribute('aria-current', 'true');
+    }
     row.addEventListener('click', () => {
       browser.runtime
         .sendMessage({
@@ -559,7 +578,7 @@ function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement):
     const cacheNote = document.createElement('span');
     cacheNote.className = 'cache-note';
     const age = Math.round((Date.now() - data.fetchedAt) / 3600000);
-    cacheNote.textContent = age > 0 ? `cached ${age}h ago` : 'cached';
+    cacheNote.textContent = age > 0 ? t('popup_cachedHoursAgo', String(age)) : t('popup_cached');
     actions.appendChild(cacheNote);
   }
 
@@ -571,7 +590,8 @@ function buildShareText(data: RatingsPanelData): string {
   const year = data.resolved.year ? ` (${data.resolved.year})` : '';
   lines.push(`${data.resolved.title}${year}`);
   if (data.aggregate) {
-    lines.push(`${data.aggregate.value.toFixed(1)} / 10 — ${data.aggregate.sourcesUsed} sources`);
+    const sources = t('popup_sources', String(data.aggregate.sourcesUsed));
+    lines.push(`${data.aggregate.value.toFixed(1)} / 10 — ${sources}`);
   }
   lines.push('');
   for (const r of data.results) {

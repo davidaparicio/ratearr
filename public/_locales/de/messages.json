@@ -126,6 +126,12 @@
   "err_parse": {
     "message": "Analysefehler"
   },
+  "err_bad_key": {
+    "message": "Ungültiger API-Schlüssel"
+  },
+  "err_rate_limit": {
+    "message": "Tageslimit erreicht"
+  },
   "options_title": {
     "message": "Ratearr-Einstellungen"
   },
@@ -146,6 +152,36 @@
   },
   "options_saved": {
     "message": "Einstellungen gespeichert."
+  },
+  "popup_openOn": {
+    "message": "Auf $SOURCE$ öffnen",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Gewichtung von $SOURCE$ in der Gesamtwertung",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_save": {
+    "message": "Speichern"
+  },
+  "options_apiKeyPlaceholder": {
+    "message": "API-Schlüssel eingeben"
+  },
+  "options_getKey": {
+    "message": "Schlüssel anfordern"
+  },
+  "popup_cached": {
+    "message": "zwischengespeichert"
+  },
+  "popup_cachedHoursAgo": {
+    "message": "vor $HOURS$ Std. zwischengespeichert",
+    "placeholders": {
+      "hours": { "content": "$1" }
+    }
   },
   "options_theme": {
     "message": "Erscheinungsbild"

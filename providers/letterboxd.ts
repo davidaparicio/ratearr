@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
 
@@ -67,7 +68,7 @@ export function buildSlugCandidates(title: string, year?: number): string[] {
 async function trySlug(slug: string, year?: number): Promise<LbRating | null> {
   const pageUrl = `${LB_BASE}/film/${slug}/`;
   dbg('letterboxd', `trying ${pageUrl}`);
-  const resp = await fetch(pageUrl);
+  const resp = await fetchWithTimeout(pageUrl);
   if (!resp.ok) {
     dbg('letterboxd', `${pageUrl} → HTTP ${resp.status}`);
     return null;

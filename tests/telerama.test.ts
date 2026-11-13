@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   extractCritiqueHrefs,
   extractFilmHrefs,
@@ -7,7 +7,9 @@ import {
   pickBestCritiqueHref,
   pickBestFilmHref,
   slugToTitle,
+  teleramaProvider,
 } from '../providers/telerama';
+import { DEFAULT_SETTINGS } from '../utils/settings';
 
 describe('parseCriticRating', () => {
   it('extracts rating from JSON-LD with data-tag="content"', () => {
@@ -80,28 +82,38 @@ describe('extractFilmHrefs', () => {
 describe('pickBestFilmHref', () => {
   const hrefs = ['/cinema/films/juste-ciel-2010,456.php', '/cinema/films/juste-ciel-2023,123.php'];
 
-  it('returns first href when no year', () => {
-    expect(pickBestFilmHref(hrefs)).toBe(hrefs[0]);
+  it('returns first matching href when no year', () => {
+    expect(pickBestFilmHref(hrefs, 'Juste ciel')).toBe(hrefs[0]);
   });
 
   it('prefers year-matching href', () => {
-    expect(pickBestFilmHref(hrefs, 2023)).toBe(hrefs[1]);
+    expect(pickBestFilmHref(hrefs, 'Juste ciel', 2023)).toBe(hrefs[1]);
   });
 
   it('accepts ±1 year tolerance', () => {
-    expect(pickBestFilmHref(hrefs, 2022)).toBe(hrefs[1]);
+    expect(pickBestFilmHref(hrefs, 'Juste ciel', 2022)).toBe(hrefs[1]);
   });
 
   it('returns null when year provided but no year matches', () => {
-    expect(pickBestFilmHref(hrefs, 1999)).toBeNull();
-  });
-
-  it('falls back to first when no year provided', () => {
-    expect(pickBestFilmHref(hrefs)).toBe(hrefs[0]);
+    expect(pickBestFilmHref(hrefs, 'Juste ciel', 1999)).toBeNull();
   });
 
   it('returns null for empty list', () => {
-    expect(pickBestFilmHref([], 2023)).toBeNull();
+    expect(pickBestFilmHref([], 'Juste ciel', 2023)).toBeNull();
+  });
+
+  it('rejects films whose title does not match, with or without a year', () => {
+    expect(pickBestFilmHref(['/cinema/films/autre-film-2021,1.php'], 'Dune', 2021)).toBeNull();
+    expect(pickBestFilmHref(['/cinema/films/autre-film,1.php'], 'Dune')).toBeNull();
+  });
+
+  it('picks by title, not by digits in the id', () => {
+    const results = ['/cinema/films/the-batman,n2021001.php', '/cinema/films/dune,n7000555.php'];
+    expect(pickBestFilmHref(results, 'Dune', 2021)).toBe(results[1]);
+  });
+
+  it('rejects a same-title film whose slug year is too far off', () => {
+    expect(pickBestFilmHref(['/cinema/films/dune-1984,2021000.php'], 'Dune', 2021)).toBeNull();
   });
 });
 
@@ -153,5 +165,21 @@ describe('pickBestCritiqueHref', () => {
   it('deduplicates hrefs', () => {
     const dupes = [critiqueHrefs[0]!, critiqueHrefs[0]!];
     expect(pickBestCritiqueHref(dupes, 'Juste ciel !')).toBe(critiqueHrefs[0]);
+  });
+});
+
+describe('teleramaProvider — series', () => {
+  it('reports series as not found instead of searching the film pages', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const results = await teleramaProvider.fetchRatings(
+      { tmdbId: 1, mediaType: 'tv', title: 'Breaking Bad' },
+      DEFAULT_SETTINGS,
+    );
+    expect(
+      results.every((r) => r.status === 'unavailable' && r.reasonKey === 'err_not_found'),
+    ).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

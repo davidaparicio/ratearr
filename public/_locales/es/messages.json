@@ -126,6 +126,12 @@
   "err_parse": {
     "message": "Error de análisis"
   },
+  "err_bad_key": {
+    "message": "Clave API no válida"
+  },
+  "err_rate_limit": {
+    "message": "Límite diario alcanzado"
+  },
   "options_title": {
     "message": "Ajustes de Ratearr"
   },
@@ -146,6 +152,36 @@
   },
   "options_saved": {
     "message": "Ajustes guardados."
+  },
+  "popup_openOn": {
+    "message": "Abrir en $SOURCE$",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Peso de $SOURCE$ en la nota global",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_save": {
+    "message": "Guardar"
+  },
+  "options_apiKeyPlaceholder": {
+    "message": "Introduce la clave API"
+  },
+  "options_getKey": {
+    "message": "Obtener clave"
+  },
+  "popup_cached": {
+    "message": "en caché"
+  },
+  "popup_cachedHoursAgo": {
+    "message": "en caché hace $HOURS$ h",
+    "placeholders": {
+      "hours": { "content": "$1" }
+    }
   },
   "options_theme": {
     "message": "Apariencia"

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearCache, getCached, putCached } from '../utils/cache';
 import type { CacheEntry, RatingsPanelData } from '../utils/types';
 
@@ -130,6 +130,36 @@ describe('cache', () => {
 
       const keys = new Set(index.entries.map((e) => e.key));
       expect(keys.size).toBe(10);
+    });
+  });
+
+  describe('entries no longer in the index', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('clearCache removes entries the index lost track of', async () => {
+      await browser.storage.local.set({
+        'cache:v1:movie:tmdb:5': { v: 1, fetchedAt: Date.now(), data: makePanelData('Orphan') },
+        unrelated: 'keep me',
+      });
+      await clearCache();
+      const all = await browser.storage.local.get(null);
+      expect(Object.keys(all)).toEqual(['unrelated']);
+    });
+
+    it('drops the entries, not just the index, after repeated index failures', async () => {
+      const realSet = browser.storage.local.set.bind(browser.storage.local);
+      vi.spyOn(browser.storage.local, 'set').mockImplementation(async (items) => {
+        if ('cache:index' in items) throw new Error('index write failed');
+        return realSet(items);
+      });
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      for (let i = 1; i <= 3; i++) await putCached('movie', i, makePanelData(`Movie ${i}`));
+
+      const keys = Object.keys(await browser.storage.local.get(null));
+      expect(keys.filter((k) => k.startsWith('cache:'))).toEqual([]);
     });
   });
 });

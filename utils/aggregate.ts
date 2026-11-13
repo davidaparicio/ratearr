@@ -9,6 +9,7 @@ export function aggregate(
 
   let weightedSum = 0;
   let totalWeight = 0;
+  let sourcesUsed = 0;
 
   for (const r of ok) {
     if (r.status !== 'ok') continue;
@@ -16,6 +17,7 @@ export function aggregate(
     if (w <= 0) continue;
     weightedSum += (r.rating.value / r.rating.scale) * 10 * w;
     totalWeight += w;
+    sourcesUsed++;
   }
 
   if (totalWeight === 0) return undefined;
@@ -23,6 +25,6 @@ export function aggregate(
   return {
     value: Math.round((weightedSum / totalWeight) * 10) / 10,
     scale: 10,
-    sourcesUsed: ok.length,
+    sourcesUsed,
   };
 }

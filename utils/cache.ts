@@ -24,6 +24,27 @@ async function setIndex(index: CacheIndex): Promise<void> {
   await browser.storage.local.set({ 'cache:index': index });
 }
 
+/**
+ * Removes every cache entry and the index by key prefix, so entries the index
+ * has lost track of go too.
+ */
+async function removeAllCacheKeys(): Promise<void> {
+  const all = await browser.storage.local.get(null);
+  const keys = Object.keys(all).filter((k) => k.startsWith('cache:'));
+  if (keys.length > 0) await browser.storage.local.remove(keys);
+}
+
+/** Runs inside the index lock; resolves once any reset is done. */
+async function onIndexFailure(err: unknown): Promise<void> {
+  indexFailures++;
+  console.warn(`Ratearr: index update failed (${indexFailures}/${MAX_INDEX_FAILURES})`, err);
+  if (indexFailures >= MAX_INDEX_FAILURES) {
+    indexFailures = 0;
+    // Start over: dropping only the index would orphan every entry it tracked.
+    await removeAllCacheKeys().catch(() => {});
+  }
+}
+
 export async function getCached(
   mediaType: MediaType,
   tmdbId: number,
@@ -43,14 +64,7 @@ export async function getCached(
         index.entries = index.entries.filter((e) => e.key !== key);
         await setIndex(index);
       })
-      .catch((err) => {
-        indexFailures++;
-        console.warn(`Ratearr: index update failed (${indexFailures}/${MAX_INDEX_FAILURES})`, err);
-        if (indexFailures >= MAX_INDEX_FAILURES) {
-          indexFailures = 0;
-          browser.storage.local.remove('cache:index').catch(() => {});
-        }
-      });
+      .catch(onIndexFailure);
     await indexLock;
     return null;
   }
@@ -64,7 +78,7 @@ export async function putCached(
   data: RatingsPanelData,
 ): Promise<void> {
   const key = cacheKey(mediaType, tmdbId);
-  const entry: CacheEntry = { v: 1, fetchedAt: Date.now(), data };
+  const entry: CacheEntry = { v: 1, fetchedAt: data.fetchedAt, data };
   await browser.storage.local.set({ [key]: entry });
 
   indexLock = indexLock
@@ -81,28 +95,13 @@ export async function putCached(
 
       await setIndex(index);
     })
-    .catch((err) => {
-      indexFailures++;
-      console.warn(`Ratearr: index update failed (${indexFailures}/${MAX_INDEX_FAILURES})`, err);
-      if (indexFailures >= MAX_INDEX_FAILURES) {
-        indexFailures = 0;
-        browser.storage.local.remove('cache:index').catch(() => {});
-      }
-    });
+    .catch(onIndexFailure);
   await indexLock;
 }
 
 export async function clearCache(): Promise<void> {
   indexLock = indexLock
-    .then(async () => {
-      const index = await getIndex();
-      const keys = index.entries.map((e) => e.key);
-      if (keys.length > 0) await browser.storage.local.remove(keys);
-      await browser.storage.local.remove('cache:index');
-    })
-    .catch((err) => {
-      indexFailures++;
-      console.warn(`Ratearr: cache clear failed (${indexFailures}/${MAX_INDEX_FAILURES})`, err);
-    });
+    .then(removeAllCacheKeys)
+    .catch((err) => console.warn('Ratearr: cache clear failed', err));
   await indexLock;
 }
