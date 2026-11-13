@@ -6,6 +6,8 @@ export interface TabState {
   data: RatingsPanelData | null;
   /** The query behind this state, so a lookup cut short by a worker restart can be resumed. */
   query?: TitleQuery;
+  /** Set on a lookup that is itself a resume, so it is never resumed twice. */
+  resumed?: boolean;
 }
 
 // The MV3 service worker is stopped after ~30s idle, wiping memory; storage.session

@@ -77,11 +77,18 @@ function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
   });
 }
 
+interface LookupOptions {
+  /** "Did you mean?" list to keep stable when switching between candidates. */
+  previousCandidates?: TitleCandidate[];
+  bypassCache?: boolean;
+  /** This lookup resumes one interrupted by a worker restart. */
+  resumed?: boolean;
+}
+
 async function handleTitleDetected(
   query: TitleQuery,
   tabId: number,
-  previousCandidates?: TitleCandidate[],
-  bypassCache = false,
+  { previousCandidates, bypassCache = false, resumed = false }: LookupOptions = {},
 ) {
   const gen = (tabGenerations.get(tabId) ?? 0) + 1;
   tabGenerations.set(tabId, gen);
@@ -93,7 +100,7 @@ async function handleTitleDetected(
   let settings: Settings | undefined;
   const publish = async (state: TabState['state'], data: RatingsPanelData | null = null) => {
     if (tabGenerations.get(tabId) !== gen) return;
-    const done = setTabState(tabId, { state, data, query });
+    const done = setTabState(tabId, { state, data, query, resumed });
     updateBadge(tabId, data?.aggregate, settings?.badgeGreenMin, settings?.badgeYellowMin);
     await done;
   };
@@ -159,7 +166,7 @@ async function handleTitleDetected(
         if (tabGenerations.get(tabId) !== gen) return;
         cached.results = mergeResults(cached.results, fresh);
         // Keeps the original fetchedAt, so topping up doesn't extend the TTL.
-        await putCached(resolved.mediaType, resolved.tmdbId, { ...cached, fromCache: false });
+        await putCachedSafely(resolved.mediaType, resolved.tmdbId, { ...cached, fromCache: false });
       }
       const results = keepEnabledSources(cached.results, settings);
       const panelData = {
@@ -210,11 +217,25 @@ async function handleTitleDetected(
     };
 
     // Failed sources are cached too; the next cache hit retries just those.
-    await putCached(resolved.mediaType, resolved.tmdbId, panelData);
+    await putCachedSafely(resolved.mediaType, resolved.tmdbId, panelData);
     await publish('ready', panelData);
+  } catch (err) {
+    // Anything unexpected (storage, settings) must not leave the tab "loading",
+    // which the popup would otherwise keep waiting on or resuming.
+    console.error('Ratearr: pipeline error', err);
+    await publish('error').catch(() => {});
   } finally {
     // A newer lookup for this tab may still be running; let it clear the flag.
     if (tabGenerations.get(tabId) === gen) inFlightTabs.delete(tabId);
+  }
+}
+
+/** The cache is an optimisation: failing to write it (e.g. storage full) mustn't fail the lookup. */
+async function putCachedSafely(...args: Parameters<typeof putCached>): Promise<void> {
+  try {
+    await putCached(...args);
+  } catch (err) {
+    console.warn('Ratearr: cache write failed', err);
   }
 }
 
@@ -294,9 +315,15 @@ export default defineBackground(() => {
         if (typeof msg.tabId !== 'number') return undefined;
         const tabId = msg.tabId;
         return getTabState(tabId).then((tabState): Msg => {
-          if (tabState?.state === 'loading' && tabState.query && !inFlightTabs.has(tabId)) {
+          const interrupted =
+            tabState?.state === 'loading' && tabState.query && !inFlightTabs.has(tabId);
+          if (interrupted && tabState.resumed) {
+            // Already resumed once and interrupted again: report it rather than loop.
+            return { kind: 'panel-data', data: null, state: 'error' };
+          }
+          if (interrupted) {
             dbg('pipeline', 'resuming lookup interrupted by a worker restart');
-            handleTitleDetected(tabState.query, tabId).catch((err) =>
+            handleTitleDetected(tabState.query!, tabId, { resumed: true }).catch((err) =>
               console.error('Ratearr: pipeline error', err),
             );
           }
@@ -320,7 +347,9 @@ export default defineBackground(() => {
           sourceSite: 'alternative',
         };
         getTabState(tabId)
-          .then((tabState) => handleTitleDetected(query, tabId, tabState?.data?.candidates))
+          .then((tabState) =>
+            handleTitleDetected(query, tabId, { previousCandidates: tabState?.data?.candidates }),
+          )
           .catch((err) => console.error('Ratearr: pipeline error', err));
         return undefined;
       }
@@ -339,7 +368,10 @@ export default defineBackground(() => {
               ids: { tmdb: resolved.tmdbId, imdb: resolved.imdbId },
               sourceSite: 'refresh',
             };
-            return handleTitleDetected(query, tabId, tabState.data?.candidates, true);
+            return handleTitleDetected(query, tabId, {
+              previousCandidates: tabState.data?.candidates,
+              bypassCache: true,
+            });
           })
           .catch((err) => console.error('Ratearr: pipeline error', err));
         return undefined;

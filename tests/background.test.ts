@@ -5,6 +5,7 @@ const TAB = 1;
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('background pipeline', () => {
@@ -169,5 +170,58 @@ describe('background pipeline — partial failures', () => {
       (r) => r.status === 'unavailable' && r.source === 'imdb',
     );
     expect(imdb).toMatchObject({ reasonKey: 'err_rate_limit' });
+  });
+});
+
+describe('background pipeline — failures outside resolution', () => {
+  const query = { title: 'Fast', ids: {}, sourceSite: 'test' };
+  const tmdb = tmdbOnly([{ id: 2, title: 'Fast', release_date: '2020-01-01' }]);
+
+  it('still shows the ratings when the cache write fails (e.g. storage full)', async () => {
+    const bg = await startBackground(tmdb);
+    const realSet = browser.storage.local.set.bind(browser.storage.local);
+    vi.spyOn(browser.storage.local, 'set').mockImplementation(async (items) => {
+      if (Object.keys(items).some((k) => k.startsWith('cache:'))) throw new Error('QUOTA_BYTES');
+      return realSet(items);
+    });
+
+    await bg.detect(query, TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).state).toBe('ready'));
+  });
+
+  it('ends in an error, not a stuck "loading" that every popup poll restarts', async () => {
+    const bg = await startBackground(tmdb);
+    vi.spyOn(browser.storage.local, 'get').mockRejectedValue(new Error('storage broken'));
+
+    await bg.detect(query, TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).state).toBe('error'));
+    bg.fetchMock.mockClear();
+    for (let i = 0; i < 5; i++) await bg.panel(TAB);
+    expect(bg.fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('background pipeline — resuming after a worker restart', () => {
+  const query = { title: 'Fast', ids: {}, sourceSite: 'test' };
+  const tmdb = tmdbOnly([{ id: 2, title: 'Fast', release_date: '2020-01-01' }]);
+
+  it('resumes a lookup the previous worker left in "loading"', async () => {
+    await startBackground(tmdb);
+    await browser.storage.session.set({ [`tab:${TAB}`]: { state: 'loading', data: null, query } });
+
+    const bg = await startBackground(tmdb, {}, { keepStorage: true });
+    await bg.panel(TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).state).toBe('ready'));
+  });
+
+  it('gives up instead of resuming the same lookup again', async () => {
+    await startBackground(tmdb);
+    await browser.storage.session.set({
+      [`tab:${TAB}`]: { state: 'loading', data: null, query, resumed: true },
+    });
+
+    const bg = await startBackground(tmdb, {}, { keepStorage: true });
+    expect((await bg.panel(TAB)).state).toBe('error');
+    expect(bg.fetchMock).not.toHaveBeenCalled();
   });
 });
