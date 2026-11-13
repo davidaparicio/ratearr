@@ -51,4 +51,12 @@ describe('aggregate', () => {
     const result = aggregate(results, {});
     expect(result?.value).toBe(10);
   });
+
+  it('does not count sources excluded with a weight of 0', () => {
+    const results: RatingResult[] = [
+      { status: 'ok', rating: { source: 'tmdb', value: 8, scale: 10 } },
+      { status: 'ok', rating: { source: 'imdb', value: 2, scale: 10 } },
+    ];
+    expect(aggregate(results, { imdb: 0 })).toEqual({ value: 8, scale: 10, sourcesUsed: 1 });
+  });
 });
