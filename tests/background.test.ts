@@ -270,6 +270,17 @@ describe('background pipeline — leaving a title page', () => {
 });
 
 describe('background pipeline — context menu', () => {
+  it('tidies and caps the selected text before looking it up', async () => {
+    const bg = await startBackground(() => notFound());
+    bg.clickContextMenu(`  Le\n  Parrain \t${' et la suite'.repeat(100)}`, TAB);
+    await vi.waitFor(() => expect(bg.fetchMock).toHaveBeenCalled());
+
+    const searched = new URL(String(bg.fetchMock.mock.calls[0]![0])).searchParams.get('query')!;
+    expect(searched.startsWith('Le Parrain et la suite')).toBe(true);
+    expect(searched.length).toBeLessThanOrEqual(200);
+    expect(searched).not.toMatch(/\s{2}|\n/);
+  });
+
   it('keeps the loading badge until the lookup finishes, then shows the score', async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {

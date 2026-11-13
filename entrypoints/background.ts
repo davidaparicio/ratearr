@@ -24,6 +24,7 @@ import type {
 } from '../utils/types';
 
 const PROVIDER_TIMEOUT_MS = 8000;
+const MAX_SELECTION_LENGTH = 200;
 
 // MV2 (Firefox) uses browserAction; MV3 (Chrome) uses action
 const browserAction = browser.action ?? browser.browserAction;
@@ -301,7 +302,8 @@ export default defineBackground(() => {
   browser.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId !== 'ratearr-lookup' || !info.selectionText || !tab?.id) return;
     const query: TitleQuery = {
-      title: info.selectionText.trim(),
+      // Selections can span lines or paragraphs; no title is longer than this.
+      title: info.selectionText.replace(/\s+/g, ' ').trim().slice(0, MAX_SELECTION_LENGTH).trim(),
       ids: {},
       sourceSite: 'context-menu',
     };
