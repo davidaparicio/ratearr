@@ -1,6 +1,6 @@
 import { dbg } from '../utils/debug';
 import { fetchWithTimeout } from '../utils/http';
-import { rankByTitleMatch, titleSimilarity } from '../utils/normalize';
+import { rankByTitleMatch } from '../utils/normalize';
 import type { MediaType, RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
 
@@ -107,48 +107,73 @@ async function searchByAutocomplete(
   return buildAllocineUrl(best.entity_id, mediaType);
 }
 
+interface SearchPageEntity {
+  id: string;
+  title: string;
+  year?: number;
+}
+
 export function parseSearchPageEntities(
   html: string,
   title: string,
   mediaType: MediaType,
+  year?: number,
 ): string | null {
   const match = html.match(/var jsEntities\s*=\s*({[\s\S]*?});\s*(?:var|<\/script>)/);
   if (!match) return null;
 
+  let entities: Record<string, unknown>;
   try {
-    const entities = JSON.parse(match[1]!);
-    const prefix = mediaType === 'tv' ? 'TVSeries:' : 'Movie:';
-
-    for (const [key, val] of Object.entries(entities)) {
-      let decoded: string;
-      try {
-        decoded = atob(key);
-      } catch {
-        continue;
-      }
-      if (!decoded.startsWith(prefix)) continue;
-      const entity = val as { title?: string };
-      if (!entity.title) continue;
-
-      if (titleSimilarity(title, entity.title) > 0) {
-        const id = decoded.slice(prefix.length);
-        dbg('allocine', `search page found: "${entity.title}" id:${id}`);
-        return id;
-      }
-    }
+    entities = JSON.parse(match[1]!);
   } catch {
-    // invalid JSON
+    return null;
   }
-  return null;
+
+  const prefix = mediaType === 'tv' ? 'TVSeries:' : 'Movie:';
+  const candidates: SearchPageEntity[] = [];
+  for (const [key, val] of Object.entries(entities)) {
+    let decoded: string;
+    try {
+      decoded = atob(key);
+    } catch {
+      continue;
+    }
+    if (!decoded.startsWith(prefix)) continue;
+    const entity = val as { title?: string; releaseDate?: string };
+    if (!entity.title) continue;
+    const releaseYear = entity.releaseDate?.match(/^(\d{4})/)?.[1];
+    candidates.push({
+      id: decoded.slice(prefix.length),
+      title: entity.title,
+      year: releaseYear ? parseInt(releaseYear, 10) : undefined,
+    });
+  }
+
+  // Sequels and remakes all contain the title: rank instead of taking the first hit.
+  const best = rankByTitleMatch(candidates, title, year, {
+    getTitle: (c) => c.title,
+    getAltTitle: () => '',
+    getYear: (c) => c.year,
+  })[0];
+  if (!best || best.score === 0) return null;
+  dbg(
+    'allocine',
+    `search page picked: "${best.item.title}" (${best.item.year}) id:${best.item.id}`,
+  );
+  return best.item.id;
 }
 
-async function searchByPage(title: string, mediaType: MediaType): Promise<string | null> {
+async function searchByPage(
+  title: string,
+  mediaType: MediaType,
+  year?: number,
+): Promise<string | null> {
   const url = `${ALLOCINE_BASE}/rechercher/?q=${encodeURIComponent(title)}`;
   const resp = await fetchWithTimeout(url);
   if (!resp.ok) return null;
 
   const html = await resp.text();
-  const entityId = parseSearchPageEntities(html, title, mediaType);
+  const entityId = parseSearchPageEntities(html, title, mediaType, year);
   if (!entityId) {
     dbg('allocine', 'search page: no match');
     return null;
@@ -164,7 +189,7 @@ async function searchAllocine(
   const fromAutocomplete = await searchByAutocomplete(title, mediaType, year);
   if (fromAutocomplete) return fromAutocomplete;
 
-  return searchByPage(title, mediaType);
+  return searchByPage(title, mediaType, year);
 }
 
 export const allocineProvider: RatingProvider = {
