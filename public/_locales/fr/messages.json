@@ -156,6 +156,18 @@
   "options_saved": {
     "message": "Paramètres enregistrés."
   },
+  "popup_openOn": {
+    "message": "Ouvrir sur $SOURCE$",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Poids de $SOURCE$ dans la note globale",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
   "options_save": {
     "message": "Enregistrer"
   },

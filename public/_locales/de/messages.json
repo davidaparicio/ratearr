@@ -153,6 +153,18 @@
   "options_saved": {
     "message": "Einstellungen gespeichert."
   },
+  "popup_openOn": {
+    "message": "Auf $SOURCE$ öffnen",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Gewichtung von $SOURCE$ in der Gesamtwertung",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
   "options_save": {
     "message": "Speichern"
   },

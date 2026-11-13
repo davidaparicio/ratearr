@@ -153,6 +153,18 @@
   "options_saved": {
     "message": "Impostazioni salvate."
   },
+  "popup_openOn": {
+    "message": "Apri su $SOURCE$",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Peso di $SOURCE$ nel voto complessivo",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
   "options_save": {
     "message": "Salva"
   },

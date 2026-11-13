@@ -16,8 +16,9 @@
   --text-btn: #333;
   --border: #eee;
   --border-input: #ddd;
-  --accent: #6366f1;
-  --accent-hover: #5558e6;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --on-accent: #fff;
   --success: #1a7f37;
   --select-bg: #fafafa;
   --select-text: #666;
@@ -35,7 +36,8 @@
     --border: #33334a;
     --border-input: #444460;
     --accent: #818cf8;
-    --accent-hover: #6d78e8;
+    --accent-hover: #a5b4fc;
+    --on-accent: #1e1e2e;
     --success: #4ade80;
     --select-bg: #2a2a3c;
     --select-text: #a0a0b0;
@@ -53,7 +55,8 @@
   --border: #33334a;
   --border-input: #444460;
   --accent: #818cf8;
-  --accent-hover: #6d78e8;
+  --accent-hover: #a5b4fc;
+  --on-accent: #1e1e2e;
   --success: #4ade80;
   --select-bg: #2a2a3c;
   --select-text: #a0a0b0;
@@ -164,7 +167,7 @@ button:hover {
 .save-btn {
   margin-top: 12px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-color: var(--accent);
   font-weight: 500;
 }

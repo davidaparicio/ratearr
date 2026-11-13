@@ -202,6 +202,20 @@
     "message": "Settings saved.",
     "description": "Confirmation after saving"
   },
+  "popup_openOn": {
+    "message": "Open on $SOURCE$",
+    "description": "Accessible name of the link to a rating source page",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Weight of $SOURCE$ in the overall score",
+    "description": "Accessible name of a source weight menu",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
   "options_save": {
     "message": "Save",
     "description": "Button that saves the settings"

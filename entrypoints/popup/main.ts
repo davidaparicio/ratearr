@@ -234,6 +234,11 @@ function renderOkRatingRow(result: Extract<RatingResult, { status: 'ok' }>): HTM
     link.rel = 'noopener';
     link.className = 'source-link';
     link.textContent = '↗';
+    link.setAttribute(
+      'aria-label',
+      t('popup_openOn', t(SOURCE_LABELS[result.rating.source] || result.rating.source)),
+    );
+    link.title = link.getAttribute('aria-label')!;
     row.appendChild(link);
   }
 
@@ -261,6 +266,8 @@ function renderUnavailableRatingRow(
     link.href = '#';
     link.className = 'options-link';
     link.textContent = '⚙';
+    link.setAttribute('aria-label', t('popup_openSettings'));
+    link.title = t('popup_openSettings');
     link.addEventListener('click', (e) => {
       e.preventDefault();
       browser.runtime.openOptionsPage();

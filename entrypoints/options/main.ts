@@ -76,6 +76,7 @@ async function init() {
     const weight = document.createElement('select');
     weight.className = 'weight-select';
     weight.dataset.weightSource = src.id;
+    weight.setAttribute('aria-label', t('options_weightFor', t(src.labelKey)));
     const currentWeight = settings.sourceWeights[src.id] ?? 1;
     for (const w of weightChoices(currentWeight)) {
       const opt = document.createElement('option');

@@ -153,6 +153,18 @@
   "options_saved": {
     "message": "Ajustes guardados."
   },
+  "popup_openOn": {
+    "message": "Abrir en $SOURCE$",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
+  "options_weightFor": {
+    "message": "Peso de $SOURCE$ en la nota global",
+    "placeholders": {
+      "source": { "content": "$1" }
+    }
+  },
   "options_save": {
     "message": "Guardar"
   },
