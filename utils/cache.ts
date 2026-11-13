@@ -69,7 +69,7 @@ export async function putCached(
   data: RatingsPanelData,
 ): Promise<void> {
   const key = cacheKey(mediaType, tmdbId);
-  const entry: CacheEntry = { v: 1, fetchedAt: Date.now(), data };
+  const entry: CacheEntry = { v: 1, fetchedAt: data.fetchedAt, data };
   await browser.storage.local.set({ [key]: entry });
 
   indexLock = indexLock

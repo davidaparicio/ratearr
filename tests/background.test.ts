@@ -58,3 +58,52 @@ describe('background pipeline', () => {
     await vi.waitFor(async () => expect((await bg.panel(TAB)).state).toBe('error'));
   });
 });
+
+describe('background pipeline — cache vs. settings changes', () => {
+  const movie = { id: 2, title: 'Fast', release_date: '2020-01-01' };
+  const onlyTmdb = {
+    enabledSources: {
+      tmdb: true,
+      imdb: false,
+      rottentomatoes: false,
+      metacritic: false,
+      'allocine-presse': false,
+      'allocine-spectateurs': false,
+      senscritique: false,
+      letterboxd: false,
+      telerama: false,
+      'telerama-abonnes': false,
+    },
+  };
+
+  it('fetches a source enabled after the entry was cached, keeping the cache age', async () => {
+    const tmdb = tmdbOnly([movie]);
+    let bg = await startBackground(tmdb, onlyTmdb);
+    await bg.detect({ title: 'Fast', ids: {}, sourceSite: 'test' }, TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).state).toBe('ready'));
+    const firstFetchedAt = (await bg.panel(TAB)).data!.fetchedAt;
+
+    const settings = {
+      ...onlyTmdb,
+      enabledSources: { ...onlyTmdb.enabledSources, letterboxd: true },
+    };
+    await browser.storage.sync.set({ settings: { ...settings, tmdbApiKey: 'test-key' } });
+    bg = await startBackground(tmdb, settings, { keepStorage: true });
+    await bg.detect({ title: 'Fast', ids: {}, sourceSite: 'test' }, TAB);
+    await vi.waitFor(async () => {
+      const { state, data } = await bg.panel(TAB);
+      expect(state).toBe('ready');
+      expect(data!.results.map((r) => (r.status === 'ok' ? r.rating.source : r.source))).toEqual([
+        'tmdb',
+        'letterboxd',
+      ]);
+      expect(data!.fromCache).toBe(true);
+      expect(data!.fetchedAt).toBe(firstFetchedAt);
+    });
+    const hosts = bg.fetchMock.mock.calls.map(([u]) => new URL(String(u)).hostname);
+    expect(hosts).toContain('letterboxd.com');
+    // TMDB ratings came from the cache; only resolution hit TMDB again
+    const paths = bg.fetchMock.mock.calls.map(([u]) => new URL(String(u)).pathname);
+    expect(paths).not.toContain('/3/movie/2');
+  });
+});

@@ -1,5 +1,11 @@
 import type { Browser } from 'wxt/browser';
-import { getEnabledProviders, keepEnabledSources, unavailableResults } from '../providers/registry';
+import {
+  getEnabledProviders,
+  keepEnabledSources,
+  mergeResults,
+  providersToRefetch,
+  unavailableResults,
+} from '../providers/registry';
 import { fetchWatchProviders, resolveTitle } from '../providers/tmdb';
 import { aggregate } from '../utils/aggregate';
 import { getCached, isCacheable, putCached } from '../utils/cache';
@@ -30,8 +36,8 @@ const inFlightProviders = new Map<string, Promise<RatingResult[]>>();
 async function fetchFromProviders(
   resolved: ResolvedTitle,
   settings: Settings,
+  providers = getEnabledProviders(settings),
 ): Promise<RatingResult[]> {
-  const providers = getEnabledProviders(settings);
   const allResults: RatingResult[] = [];
 
   const settled = await Promise.allSettled(
@@ -134,6 +140,22 @@ async function handleTitleDetected(
       : await getCached(resolved.mediaType, resolved.tmdbId, settings.cacheTtlHours);
     if (cached) {
       if (tabGenerations.get(tabId) !== gen) return;
+      // Settings may have changed since this was cached: fetch only what it lacks.
+      const missing = providersToRefetch(cached.results, settings);
+      if (missing.length > 0) {
+        dbg(
+          'pipeline',
+          'cache top-up',
+          missing.map((p) => p.id),
+        );
+        const fresh = await fetchFromProviders(resolved, settings, missing);
+        if (tabGenerations.get(tabId) !== gen) return;
+        cached.results = mergeResults(cached.results, fresh);
+        // Keeps the original fetchedAt, so topping up doesn't extend the TTL.
+        if (isCacheable(fresh)) {
+          await putCached(resolved.mediaType, resolved.tmdbId, { ...cached, fromCache: false });
+        }
+      }
       const results = keepEnabledSources(cached.results, settings);
       const panelData = {
         ...cached,
