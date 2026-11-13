@@ -1,5 +1,6 @@
 const LEADING_ARTICLES = /^(the|les|le|la|un|une|a|an)\s+/i;
-const LEADING_ELISION = /^l['']\s*/i;
+// ASCII and typographic (U+2019) apostrophes: L'Odyssée, L’Odyssée
+const LEADING_ELISION = /^l['’]\s*/i;
 
 const LIGATURES: Record<string, string> = { œ: 'oe', æ: 'ae', ß: 'ss' };
 

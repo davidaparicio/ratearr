@@ -14,6 +14,11 @@ describe('normalizeTitle', () => {
     expect(normalizeTitle("L'Arnaqueur")).toBe('arnaqueur');
   });
 
+  it('removes a leading elision written with a typographic apostrophe', () => {
+    expect(normalizeTitle('L\u2019Odyssée')).toBe('odyssee');
+    expect(titleSimilarity('L\u2019Arnaqueur', "L'Arnaqueur")).toBe(1);
+  });
+
   it('strips punctuation and collapses whitespace', () => {
     expect(normalizeTitle('Spider-Man: No Way Home')).toBe('spiderman no way home');
   });
