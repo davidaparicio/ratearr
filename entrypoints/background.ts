@@ -13,7 +13,7 @@ import { buildCandidates } from '../utils/candidates';
 import { dbg, setDebug } from '../utils/debug';
 import type { Msg } from '../utils/messages';
 import { getSettings, type Settings } from '../utils/settings';
-import { deleteTabState, getTabState, setTabState } from '../utils/tab-state';
+import { deleteTabState, getTabState, setTabState, type TabState } from '../utils/tab-state';
 import type {
   RatingResult,
   RatingsPanelData,
@@ -87,11 +87,21 @@ async function handleTitleDetected(
   tabGenerations.set(tabId, gen);
   inFlightTabs.add(tabId);
 
-  try {
-    await setTabState(tabId, { state: 'loading', data: null, query });
-    updateBadge(tabId, undefined);
+  // Every state write goes through here: once a newer lookup has started for
+  // this tab, this one must not touch its state or badge. The check and the
+  // (synchronous, in-memory) write happen together, after all of our awaits.
+  let settings: Settings | undefined;
+  const publish = async (state: TabState['state'], data: RatingsPanelData | null = null) => {
+    if (tabGenerations.get(tabId) !== gen) return;
+    const done = setTabState(tabId, { state, data, query });
+    updateBadge(tabId, data?.aggregate, settings?.badgeGreenMin, settings?.badgeYellowMin);
+    await done;
+  };
 
-    const settings = await getSettings();
+  try {
+    await publish('loading');
+
+    settings = await getSettings();
     setDebug(!!settings.debug);
     dbg('pipeline', 'query', {
       title: query.title,
@@ -105,17 +115,14 @@ async function handleTitleDetected(
       resolution = await resolveTitle(query, settings);
     } catch (err) {
       console.warn('Ratearr: resolution failed', err);
-      if (tabGenerations.get(tabId) !== gen) return;
-      await setTabState(tabId, { state: 'error', data: null, query });
-      updateBadge(tabId, undefined);
+      await publish('error');
       return;
     }
     // A newer lookup started for this tab while resolving; its result wins.
     if (tabGenerations.get(tabId) !== gen) return;
     if (!resolution) {
       dbg('pipeline', 'no resolution found');
-      await setTabState(tabId, { state: 'not-found', data: null, query });
-      updateBadge(tabId, undefined);
+      await publish('not-found');
       return;
     }
 
@@ -163,8 +170,7 @@ async function handleTitleDetected(
         candidates,
         fromCache: true,
       };
-      await setTabState(tabId, { state: 'ready', data: panelData, query });
-      updateBadge(tabId, panelData.aggregate, settings.badgeGreenMin, settings.badgeYellowMin);
+      await publish('ready', panelData);
       return;
     }
 
@@ -205,8 +211,7 @@ async function handleTitleDetected(
 
     // Failed sources are cached too; the next cache hit retries just those.
     await putCached(resolved.mediaType, resolved.tmdbId, panelData);
-    await setTabState(tabId, { state: 'ready', data: panelData, query });
-    updateBadge(tabId, agg, settings.badgeGreenMin, settings.badgeYellowMin);
+    await publish('ready', panelData);
   } finally {
     // A newer lookup for this tab may still be running; let it clear the flag.
     if (tabGenerations.get(tabId) === gen) inFlightTabs.delete(tabId);

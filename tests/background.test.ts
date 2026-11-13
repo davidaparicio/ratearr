@@ -52,6 +52,35 @@ describe('background pipeline', () => {
     expect((await bg.panel(TAB)).state).toBe('ready');
   });
 
+  it('a stale lookup finishing late (slow watch providers) does not overwrite a newer result', async () => {
+    let releaseWatch!: () => void;
+    const watchGate = new Promise<void>((resolve) => {
+      releaseWatch = resolve;
+    });
+    const tmdb = tmdbOnly([
+      { id: 1, title: 'Slow', release_date: '2020-01-01' },
+      { id: 2, title: 'Fast', release_date: '2020-01-01' },
+    ]);
+    const bg = await startBackground((url) =>
+      url.pathname === '/3/movie/1/watch/providers' ? watchGate.then(() => tmdb(url)) : tmdb(url),
+    );
+
+    await bg.detect({ title: 'Slow', ids: {}, sourceSite: 'test' }, TAB);
+    // let Slow get past its ratings and block on watch providers
+    await vi.waitFor(() =>
+      expect(bg.fetchMock.mock.calls.some(([u]) => String(u).includes('/3/movie/1/watch'))).toBe(
+        true,
+      ),
+    );
+    await bg.detect({ title: 'Fast', ids: {}, sourceSite: 'test' }, TAB);
+    await vi.waitFor(async () => expect((await bg.panel(TAB)).data?.resolved.title).toBe('Fast'));
+
+    releaseWatch();
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect((await bg.panel(TAB)).data?.resolved.title).toBe('Fast');
+  });
+
   it('reports an error when TMDB is unreachable', async () => {
     const bg = await startBackground(() => notFound());
     await bg.detect({ title: 'Nothing', ids: {}, sourceSite: 'test' }, TAB);
