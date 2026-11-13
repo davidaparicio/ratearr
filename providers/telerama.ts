@@ -1,6 +1,6 @@
 import { dbg } from '../utils/debug';
 import { fetchWithTimeout } from '../utils/http';
-import { titleSimilarity } from '../utils/normalize';
+import { rankByTitleMatch, titleSimilarity } from '../utils/normalize';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
 
@@ -58,18 +58,29 @@ export function slugToTitle(href: string): string {
   return slug.replace(/-/g, ' ');
 }
 
-export function pickBestFilmHref(hrefs: string[], year?: number): string | null {
-  if (hrefs.length === 0) return null;
+/** "/cinema/films/juste-ciel-2023,123.php" → title "juste ciel", year 2023 (the id is ignored). */
+function parseFilmHref(href: string): { title: string; year?: number } {
+  const slug = href.replace(/^\/cinema\/films\//, '').replace(/,.*$/, '');
+  const yearMatch = slug.match(/-(\d{4})$/);
+  const titleSlug = yearMatch ? slug.slice(0, -yearMatch[0].length) : slug;
+  return {
+    title: titleSlug.replace(/-/g, ' '),
+    year: yearMatch ? parseInt(yearMatch[1]!, 10) : undefined,
+  };
+}
 
-  if (year) {
-    for (const href of hrefs) {
-      const m = href.match(/(\d{4})/);
-      if (m && Math.abs(parseInt(m[1]!, 10) - year) <= 1) return href;
-    }
-    return null;
-  }
-
-  return hrefs[0]!;
+export function pickBestFilmHref(hrefs: string[], title: string, year?: number): string | null {
+  const candidates = hrefs
+    .map((href) => ({ href, ...parseFilmHref(href) }))
+    // A slug year far from ours is another film with the same title (a remake).
+    .filter((c) => !year || c.year == null || Math.abs(c.year - year) <= 1);
+  const ranked = rankByTitleMatch(candidates, title, year, {
+    getTitle: (c) => c.title,
+    getAltTitle: () => '',
+    getYear: (c) => c.year,
+  });
+  const best = ranked[0];
+  return best && best.score > 0 ? best.item.href : null;
 }
 
 export function pickBestCritiqueHref(hrefs: string[], title: string): string | null {
@@ -90,7 +101,7 @@ async function findFilmUrl(title: string, year?: number): Promise<string | null>
   const html = await resp.text();
 
   const filmHrefs = extractFilmHrefs(html);
-  const filmHref = pickBestFilmHref(filmHrefs, year);
+  const filmHref = pickBestFilmHref(filmHrefs, title, year);
   dbg('telerama', `film hrefs: ${filmHrefs.length}`, filmHrefs, `picked:`, filmHref);
   if (filmHref) return `${TLR_BASE}${filmHref}`;
 
@@ -136,6 +147,14 @@ export const teleramaProvider: RatingProvider = {
   },
 
   async fetchRatings(resolved: ResolvedTitle): Promise<RatingResult[]> {
+    // Only the film pages (/cinema/films/) are searched; a series would match a film.
+    if (resolved.mediaType === 'tv') {
+      return this.produces.map((source) => ({
+        status: 'unavailable' as const,
+        source,
+        reasonKey: 'err_not_found',
+      }));
+    }
     try {
       const titlesToTry = resolved.localizedTitle
         ? [resolved.localizedTitle, resolved.title]
