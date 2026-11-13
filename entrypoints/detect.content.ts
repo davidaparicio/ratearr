@@ -3,19 +3,18 @@ import type { Msg } from '../utils/messages';
 import type { TitleQuery } from '../utils/types';
 
 export default defineContentScript({
+  // Whole hosts, not just title paths: content scripts are only injected on a
+  // document load, so on these SPA sites a title reached by in-app navigation
+  // would otherwise never be seen. Detectors' matches() filter the URLs.
   matches: [
-    '*://*.imdb.com/title/*',
-    '*://www.allocine.fr/film/*',
-    '*://www.allocine.fr/series/*',
-    '*://www.themoviedb.org/movie/*',
-    '*://www.themoviedb.org/tv/*',
-    '*://www.netflix.com/title/*',
-    '*://www.primevideo.com/detail/*',
-    '*://www.disneyplus.com/movies/*',
-    '*://www.disneyplus.com/series/*',
-    '*://letterboxd.com/film/*',
-    '*://www.senscritique.com/film/*',
-    '*://www.senscritique.com/serie/*',
+    '*://*.imdb.com/*',
+    '*://www.allocine.fr/*',
+    '*://www.themoviedb.org/*',
+    '*://www.netflix.com/*',
+    '*://www.primevideo.com/*',
+    '*://www.disneyplus.com/*',
+    '*://letterboxd.com/*',
+    '*://www.senscritique.com/*',
     '*://en.wikipedia.org/wiki/*',
     '*://fr.wikipedia.org/wiki/*',
     '*://es.wikipedia.org/wiki/*',
