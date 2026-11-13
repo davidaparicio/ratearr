@@ -102,7 +102,8 @@ const MAX_ALTERNATIVES = 7;
 /**
  * Searches in English and French and merges the hits, each tagged with its
  * `media_type`: taken from the hit for /search/multi (people are dropped), or
- * `endpointMediaType` for the typed endpoints.
+ * `endpointMediaType` for the typed endpoints. The English record is kept; the
+ * French title of the same id goes in `other_titles` so French queries match.
  */
 async function fetchBilingualResults(
   endpoint: string,
@@ -116,20 +117,22 @@ async function fetchBilingualResults(
   ]);
 
   // Movie and TV ids are separate namespaces, so dedupe on both.
-  const seen = new Set<string>();
-  const results: any[] = [];
+  const byKey = new Map<string, any>();
   const enResults = Array.isArray(dataEn.results) ? dataEn.results : [];
   const frResults = Array.isArray(dataFr.results) ? dataFr.results : [];
   for (const r of [...enResults, ...frResults]) {
     const mediaType = endpointMediaType ?? r.media_type;
     if (mediaType !== 'movie' && mediaType !== 'tv') continue;
     const key = `${mediaType}:${r.id}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      results.push({ ...r, media_type: mediaType });
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...r, media_type: mediaType, other_titles: [] });
+    } else {
+      const title = r.title || r.name;
+      if (title && title !== (existing.title || existing.name)) existing.other_titles.push(title);
     }
   }
-  return results;
+  return [...byKey.values()];
 }
 
 async function resolveByTitleSearch(
@@ -158,6 +161,7 @@ async function resolveByTitleSearch(
   const ranked = rankByTitleMatch(results, query.title, query.year, {
     getTitle: (r) => r.title || r.name || '',
     getAltTitle: (r) => r.original_title || r.original_name || '',
+    getOtherTitles: (r) => r.other_titles,
     getYear: (r) => parseYear(r.release_date || r.first_air_date),
   }).sort((a, b) => {
     if (a.score !== b.score) return b.score - a.score;

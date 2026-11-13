@@ -41,6 +41,8 @@ function isYearClose(year: number | undefined, queryYear: number | undefined): b
 export interface TitleAccessors<T> {
   getTitle: (item: T) => string;
   getAltTitle: (item: T) => string;
+  /** Further names to match against, e.g. the title in another language. */
+  getOtherTitles?: (item: T) => string[];
   getYear: (item: T) => number | undefined;
 }
 
@@ -55,8 +57,11 @@ export function rankByTitleMatch<T>(
       .map((item) => ({
         item,
         score: Math.max(
-          titleSimilarity(query, accessors.getTitle(item)),
-          titleSimilarity(query, accessors.getAltTitle(item)),
+          ...[
+            accessors.getTitle(item),
+            accessors.getAltTitle(item),
+            ...(accessors.getOtherTitles?.(item) ?? []),
+          ].map((title) => titleSimilarity(query, title)),
         ),
         yearMatch: isYearClose(accessors.getYear(item), queryYear),
       }))

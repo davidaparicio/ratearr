@@ -226,3 +226,43 @@ describe('resolveTitle — unknown media type (Netflix, Prime Video, context men
     ]);
   });
 });
+
+describe('resolveTitle — French title on a French site', () => {
+  const en = [
+    {
+      id: 238,
+      title: 'The Godfather',
+      original_title: 'The Godfather',
+      release_date: '1972-03-14',
+    },
+    { id: 240, title: 'The Godfather Part II', release_date: '1974-12-20' },
+  ];
+  const fr = [
+    { id: 238, title: 'Le Parrain', original_title: 'The Godfather', release_date: '1972-03-14' },
+    { id: 240, title: 'Le Parrain, 2e partie', release_date: '1974-12-20' },
+  ];
+
+  it('matches against the French title TMDB returned for the same id', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string | URL | Request) => {
+        const u = new URL(typeof url === 'string' ? url : url.toString());
+        const results = u.searchParams.get('language') === 'fr-FR' ? fr : en;
+        const body = u.pathname.startsWith('/3/search/') ? { results } : {};
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+      }),
+    );
+    const query: TitleQuery = {
+      title: 'Le Parrain',
+      year: 1972,
+      mediaType: 'movie',
+      ids: {},
+      sourceSite: 'www.allocine.fr',
+    };
+
+    const result = await resolveTitle(query, settings);
+    expect(result?.resolved.tmdbId).toBe(238);
+    // The English record is still the one displayed
+    expect(result?.resolved.title).toBe('The Godfather');
+  });
+});
