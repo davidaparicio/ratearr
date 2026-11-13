@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import type { Settings } from '../utils/settings';
 import type { Rating, RatingResult, ResolvedTitle, SourceId } from '../utils/types';
 import type { RatingProvider } from './types';
@@ -112,7 +113,7 @@ export const omdbProvider: RatingProvider = {
     url.searchParams.set('i', resolved.imdbId);
     url.searchParams.set('apikey', settings.omdbApiKey);
 
-    const resp = await fetch(url.toString());
+    const resp = await fetchWithTimeout(url.toString());
     if (!resp.ok) throw new Error(`omdb_http_${resp.status}`);
     const data: OmdbResponse = await resp.json();
     dbg(

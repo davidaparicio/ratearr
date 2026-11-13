@@ -148,6 +148,9 @@ async function handleTitleDetected(
       return;
     }
 
+    // Independent of the ratings, so fetch it alongside rather than after them.
+    const watchProvidersPromise = fetchWatchProviders(resolved, settings).catch(() => undefined);
+
     const providerKey = `${resolved.mediaType}:${resolved.tmdbId}`;
     let allResults: RatingResult[];
     const existing = inFlightProviders.get(providerKey);
@@ -167,12 +170,7 @@ async function handleTitleDetected(
 
     const agg = aggregate(allResults, settings.sourceWeights);
 
-    let watchProviders: Awaited<ReturnType<typeof fetchWatchProviders>> | undefined;
-    try {
-      watchProviders = await fetchWatchProviders(resolved, settings);
-    } catch {
-      // non-critical
-    }
+    const watchProviders = await watchProvidersPromise;
 
     const panelData: RatingsPanelData = {
       resolved,

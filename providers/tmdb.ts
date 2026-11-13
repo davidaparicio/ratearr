@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import { rankByTitleMatch } from '../utils/normalize';
 import type { Settings } from '../utils/settings';
 import type {
@@ -35,7 +36,7 @@ async function tmdbFetch(
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
-  const resp = await fetch(url.toString());
+  const resp = await fetchWithTimeout(url.toString());
   if (!resp.ok) throw new Error(`tmdb_http_${resp.status}`);
   return resp.json();
 }
@@ -54,8 +55,10 @@ function parseYear(dateStr?: string): number | undefined {
 async function resolveByTmdbId(query: TitleQuery, settings: Settings): Promise<ResolutionResult> {
   const mediaType = query.mediaType ?? 'movie';
   validateMediaType(mediaType);
-  const data = await tmdbFetch(`/${mediaType}/${query.ids.tmdb}`, { language: 'en-US' }, settings);
-  const extIds = await tmdbFetch(`/${mediaType}/${query.ids.tmdb}/external_ids`, {}, settings);
+  const [data, extIds] = await Promise.all([
+    tmdbFetch(`/${mediaType}/${query.ids.tmdb}`, { language: 'en-US' }, settings),
+    tmdbFetch(`/${mediaType}/${query.ids.tmdb}/external_ids`, {}, settings),
+  ]);
   return {
     resolved: {
       tmdbId: query.ids.tmdb!,

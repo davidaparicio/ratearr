@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import { rankByTitleMatch } from '../utils/normalize';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
@@ -23,7 +24,7 @@ interface ScProductWithStats extends ScProduct {
 }
 
 async function scQuery<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
-  const resp = await fetch(SC_GRAPHQL, {
+  const resp = await fetchWithTimeout(SC_GRAPHQL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, variables }),

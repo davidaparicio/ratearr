@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import { titleSimilarity } from '../utils/normalize';
 import type { RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
@@ -83,7 +84,7 @@ export function pickBestCritiqueHref(hrefs: string[], title: string): string | n
 
 async function findFilmUrl(title: string, year?: number): Promise<string | null> {
   const url = `${TLR_SEARCH}?q=${encodeURIComponent(title)}`;
-  const resp = await fetch(url, { credentials: 'include' });
+  const resp = await fetchWithTimeout(url, { credentials: 'include' });
   if (!resp.ok) return null;
 
   const html = await resp.text();
@@ -105,7 +106,7 @@ async function fetchTeleramaRatings(title: string, year?: number): Promise<Teler
   const filmUrl = await findFilmUrl(title, year);
   if (!filmUrl) return null;
 
-  const resp = await fetch(filmUrl, { credentials: 'include' });
+  const resp = await fetchWithTimeout(filmUrl, { credentials: 'include' });
   if (!resp.ok) return null;
 
   const html = await resp.text();

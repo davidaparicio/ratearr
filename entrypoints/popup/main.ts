@@ -45,7 +45,9 @@ async function init() {
 }
 
 let pollCount = 0;
-const MAX_POLL = 15;
+// Worst case is ~20s: resolution (two sequential 6s-capped requests) then the
+// providers (8s cap); stop polling only after that.
+const MAX_POLL = 25;
 
 function render(app: HTMLElement, state: PanelState, data: RatingsPanelData | null, tabId: number) {
   if (state === 'loading') {

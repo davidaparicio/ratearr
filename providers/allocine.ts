@@ -1,4 +1,5 @@
 import { dbg } from '../utils/debug';
+import { fetchWithTimeout } from '../utils/http';
 import { rankByTitleMatch, titleSimilarity } from '../utils/normalize';
 import type { MediaType, RatingResult, ResolvedTitle } from '../utils/types';
 import type { RatingProvider } from './types';
@@ -85,7 +86,7 @@ async function searchByAutocomplete(
   const url = new URL(`${ALLOCINE_BASE}/_/autocomplete/${entityFilter}`);
   url.searchParams.set('q', title);
 
-  const resp = await fetch(url.toString());
+  const resp = await fetchWithTimeout(url.toString());
   if (!resp.ok) return null;
   const json = await resp.json();
   const results: AutocompleteResult[] = json.results || [];
@@ -143,7 +144,7 @@ export function parseSearchPageEntities(
 
 async function searchByPage(title: string, mediaType: MediaType): Promise<string | null> {
   const url = `${ALLOCINE_BASE}/rechercher/?q=${encodeURIComponent(title)}`;
-  const resp = await fetch(url);
+  const resp = await fetchWithTimeout(url);
   if (!resp.ok) return null;
 
   const html = await resp.text();
@@ -192,7 +193,7 @@ export const allocineProvider: RatingProvider = {
       ];
     }
 
-    const resp = await fetch(pageUrl);
+    const resp = await fetchWithTimeout(pageUrl);
     if (!resp.ok) {
       return [
         { status: 'unavailable', source: 'allocine-presse', reasonKey: 'err_network' },
