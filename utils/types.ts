@@ -47,6 +47,7 @@ export interface ResolvedTitle {
   imdbId?: string;
   mediaType: MediaType;
   title: string;
+  /** Original-language title, when it differs from `title` (tried as a fallback search). */
   localizedTitle?: string;
   year?: number;
   posterPath?: string;

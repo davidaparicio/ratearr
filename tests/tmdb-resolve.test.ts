@@ -266,3 +266,28 @@ describe('resolveTitle — French title on a French site', () => {
     expect(result?.resolved.title).toBe('The Godfather');
   });
 });
+
+describe('resolveTitle — original title of a series', () => {
+  it('keeps the original name of a TV series as a fallback search title', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string | URL | Request) => {
+        const u = new URL(typeof url === 'string' ? url : url.toString());
+        const results = [
+          {
+            id: 71446,
+            name: 'Money Heist',
+            original_name: 'La casa de papel',
+            first_air_date: '2017-05-02',
+          },
+        ];
+        const body = u.pathname.startsWith('/3/search/') ? { results } : {};
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(body) });
+      }),
+    );
+    const query: TitleQuery = { title: 'Money Heist', mediaType: 'tv', ids: {}, sourceSite: 't' };
+
+    const result = await resolveTitle(query, settings);
+    expect(result?.resolved.localizedTitle).toBe('La casa de papel');
+  });
+});

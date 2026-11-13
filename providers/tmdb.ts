@@ -46,6 +46,12 @@ export interface ResolutionResult {
   alternatives: TitleCandidate[];
 }
 
+/** The original-language title when it differs from the displayed one (movies and series). */
+function originalTitleOf(r: any): string | undefined {
+  const original = r.original_title || r.original_name;
+  return original && original !== (r.title || r.name) ? original : undefined;
+}
+
 function parseYear(dateStr?: string): number | undefined {
   if (!dateStr) return undefined;
   const match = dateStr.match(/^(\d{4})/);
@@ -65,7 +71,7 @@ async function resolveByTmdbId(query: TitleQuery, settings: Settings): Promise<R
       imdbId: extIds.imdb_id || undefined,
       mediaType,
       title: data.title || data.name || query.title,
-      localizedTitle: data.original_title !== data.title ? data.original_title : undefined,
+      localizedTitle: originalTitleOf(data),
       year: parseYear(data.release_date || data.first_air_date),
       posterPath: data.poster_path || undefined,
     },
@@ -89,7 +95,7 @@ async function resolveByImdbId(
       imdbId: query.ids.imdb,
       mediaType,
       title: result.title || result.name,
-      localizedTitle: result.original_title !== result.title ? result.original_title : undefined,
+      localizedTitle: originalTitleOf(result),
       year: parseYear(result.release_date || result.first_air_date),
       posterPath: result.poster_path || undefined,
     },
@@ -203,7 +209,7 @@ async function resolveByTitleSearch(
       imdbId,
       mediaType: chosen.media_type,
       title: chosen.title || chosen.name,
-      localizedTitle: chosen.original_title !== chosen.title ? chosen.original_title : undefined,
+      localizedTitle: originalTitleOf(chosen),
       year: parseYear(chosen.release_date || chosen.first_air_date),
       posterPath: chosen.poster_path || undefined,
     },

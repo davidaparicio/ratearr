@@ -11,7 +11,9 @@ const SC_UNIVERSE_TV = 4;
 
 export interface ScProduct {
   id: number;
+  /** French title. */
   title: string;
+  originalTitle: string | null;
   year_of_production: number | null;
   rating: number | null;
   url: string;
@@ -50,7 +52,7 @@ export function filterAndRankProducts(
 
   const ranked = rankByTitleMatch(products, title, year, {
     getTitle: (p) => p.title,
-    getAltTitle: () => '',
+    getAltTitle: (p) => p.originalTitle ?? '',
     getYear: (p) => p.year_of_production ?? undefined,
   });
 
@@ -77,7 +79,7 @@ async function searchSensCritique(
   const data = await scQuery<{
     searchAutocomplete: { items: { product: ScProduct | null }[] };
   }>(
-    'query Search($keywords: String!) { searchAutocomplete(keywords: $keywords) { items { product { id title year_of_production rating url slug universe } } } }',
+    'query Search($keywords: String!) { searchAutocomplete(keywords: $keywords) { items { product { id title originalTitle year_of_production rating url slug universe } } } }',
     { keywords: title },
   );
 

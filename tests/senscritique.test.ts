@@ -184,3 +184,54 @@ describe('senscritiqueProvider.fetchRatings', () => {
     expect(results[0]).toMatchObject({ status: 'ok', rating: { value: 7.5, count: 42 } });
   });
 });
+
+describe('senscritique — French titles', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Shapes from live searches: SensCritique lists the French title, with the original alongside.
+  const godfatherSearch = {
+    data: {
+      searchAutocomplete: {
+        items: [
+          {
+            product: {
+              id: 408443,
+              title: 'Le Parrain',
+              originalTitle: 'The Godfather',
+              year_of_production: 1972,
+              rating: 8.4,
+              url: '/film/le_parrain/408443',
+              slug: 'le_parrain',
+              universe: 1,
+            },
+          },
+        ],
+      },
+    },
+  };
+
+  it('matches the English title against the original title SensCritique returns', async () => {
+    let searchQuery = '';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const body = JSON.parse(init.body as string);
+        if (!body.query.includes('searchAutocomplete')) {
+          return new Response(JSON.stringify({ data: { product: { stats: { ratingCount: 1 } } } }));
+        }
+        searchQuery = body.query;
+        return new Response(JSON.stringify(godfatherSearch));
+      }),
+    );
+
+    const results = await senscritiqueProvider.fetchRatings(
+      { tmdbId: 238, mediaType: 'movie', title: 'The Godfather', year: 1972 },
+      DEFAULT_SETTINGS,
+    );
+
+    expect(searchQuery).toContain('originalTitle');
+    expect(results[0]).toMatchObject({ status: 'ok', rating: { value: 8.4 } });
+  });
+});
