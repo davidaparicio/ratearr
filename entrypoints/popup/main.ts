@@ -568,7 +568,7 @@ function renderActions(data: RatingsPanelData, tabId: number, app: HTMLElement):
     const cacheNote = document.createElement('span');
     cacheNote.className = 'cache-note';
     const age = Math.round((Date.now() - data.fetchedAt) / 3600000);
-    cacheNote.textContent = age > 0 ? `cached ${age}h ago` : 'cached';
+    cacheNote.textContent = age > 0 ? t('popup_cachedHoursAgo', String(age)) : t('popup_cached');
     actions.appendChild(cacheNote);
   }
 
@@ -580,7 +580,8 @@ function buildShareText(data: RatingsPanelData): string {
   const year = data.resolved.year ? ` (${data.resolved.year})` : '';
   lines.push(`${data.resolved.title}${year}`);
   if (data.aggregate) {
-    lines.push(`${data.aggregate.value.toFixed(1)} / 10 — ${data.aggregate.sourcesUsed} sources`);
+    const sources = t('popup_sources', String(data.aggregate.sourcesUsed));
+    lines.push(`${data.aggregate.value.toFixed(1)} / 10 — ${sources}`);
   }
   lines.push('');
   for (const r of data.results) {

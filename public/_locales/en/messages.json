@@ -202,6 +202,29 @@
     "message": "Settings saved.",
     "description": "Confirmation after saving"
   },
+  "options_save": {
+    "message": "Save",
+    "description": "Button that saves the settings"
+  },
+  "options_apiKeyPlaceholder": {
+    "message": "Enter API key",
+    "description": "Placeholder of the API key fields"
+  },
+  "options_getKey": {
+    "message": "Get key",
+    "description": "Link to the page where an API key can be requested"
+  },
+  "popup_cached": {
+    "message": "cached",
+    "description": "Shown when ratings come from the cache"
+  },
+  "popup_cachedHoursAgo": {
+    "message": "cached $HOURS$h ago",
+    "description": "Age of cached ratings, in hours",
+    "placeholders": {
+      "hours": { "content": "$1" }
+    }
+  },
   "options_theme": {
     "message": "Appearance",
     "description": "Theme section header"

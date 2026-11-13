@@ -153,6 +153,24 @@
   "options_saved": {
     "message": "Impostazioni salvate."
   },
+  "options_save": {
+    "message": "Salva"
+  },
+  "options_apiKeyPlaceholder": {
+    "message": "Inserisci la chiave API"
+  },
+  "options_getKey": {
+    "message": "Ottieni chiave"
+  },
+  "popup_cached": {
+    "message": "in cache"
+  },
+  "popup_cachedHoursAgo": {
+    "message": "in cache da $HOURS$ h",
+    "placeholders": {
+      "hours": { "content": "$1" }
+    }
+  },
   "options_theme": {
     "message": "Aspetto"
   },

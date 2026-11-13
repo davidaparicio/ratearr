@@ -223,7 +223,7 @@ async function init() {
   // Save button
   const saveBtn = document.createElement('button');
   saveBtn.className = 'save-btn';
-  saveBtn.textContent = 'Save';
+  saveBtn.textContent = t('options_save');
   saveBtn.addEventListener('click', async () => {
     const newSettings: Partial<Settings> = {
       enabledSources: { ...DEFAULT_SETTINGS.enabledSources },
@@ -285,14 +285,14 @@ function createKeyInput(label: string, value: string, id: string, signupUrl: str
   input.type = 'password';
   input.id = id;
   input.value = value;
-  input.placeholder = 'Enter API key';
+  input.placeholder = t('options_apiKeyPlaceholder');
   row.appendChild(input);
 
   const link = document.createElement('a');
   link.href = signupUrl;
   link.target = '_blank';
   link.rel = 'noopener';
-  link.textContent = 'Get key';
+  link.textContent = t('options_getKey');
   link.className = 'key-link';
   row.appendChild(link);
 

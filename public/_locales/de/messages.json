@@ -153,6 +153,24 @@
   "options_saved": {
     "message": "Einstellungen gespeichert."
   },
+  "options_save": {
+    "message": "Speichern"
+  },
+  "options_apiKeyPlaceholder": {
+    "message": "API-Schlüssel eingeben"
+  },
+  "options_getKey": {
+    "message": "Schlüssel anfordern"
+  },
+  "popup_cached": {
+    "message": "zwischengespeichert"
+  },
+  "popup_cachedHoursAgo": {
+    "message": "vor $HOURS$ Std. zwischengespeichert",
+    "placeholders": {
+      "hours": { "content": "$1" }
+    }
+  },
   "options_theme": {
     "message": "Erscheinungsbild"
   },

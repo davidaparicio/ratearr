@@ -156,6 +156,24 @@
   "options_saved": {
     "message": "Paramètres enregistrés."
   },
+  "options_save": {
+    "message": "Enregistrer"
+  },
+  "options_apiKeyPlaceholder": {
+    "message": "Saisir la clé API"
+  },
+  "options_getKey": {
+    "message": "Obtenir une clé"
+  },
+  "popup_cached": {
+    "message": "en cache"
+  },
+  "popup_cachedHoursAgo": {
+    "message": "en cache depuis $HOURS$ h",
+    "placeholders": {
+      "hours": { "content": "$1" }
+    }
+  },
   "options_theme": {
     "message": "Apparence"
   },
