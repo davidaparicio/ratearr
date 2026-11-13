@@ -7,6 +7,7 @@ import {
   unavailableResults,
 } from '../providers/registry';
 import { fetchWatchProviders, resolveTitle } from '../providers/tmdb';
+import type { RatingProvider } from '../providers/types';
 import { aggregate } from '../utils/aggregate';
 import { getCached, putCached } from '../utils/cache';
 import { buildCandidates } from '../utils/candidates';
@@ -31,7 +32,26 @@ const tabGenerations = new Map<number, number>();
 // Tabs with a lookup running in this worker instance; a stored 'loading' state
 // for any other tab was interrupted by a worker restart.
 const inFlightTabs = new Set<number>();
+// One fetch per provider and title at a time, shared by every lookup that needs
+// it (several tabs, or a full fetch and a cache top-up). Results are unfiltered;
+// each caller filters them by its own settings.
 const inFlightProviders = new Map<string, Promise<RatingResult[]>>();
+
+function fetchProviderOnce(
+  provider: RatingProvider,
+  resolved: ResolvedTitle,
+  settings: Settings,
+): Promise<RatingResult[]> {
+  const key = `${provider.id}:${resolved.mediaType}:${resolved.tmdbId}`;
+  let promise = inFlightProviders.get(key);
+  if (!promise) {
+    promise = withTimeout(PROVIDER_TIMEOUT_MS, provider.fetchRatings(resolved, settings)).finally(
+      () => inFlightProviders.delete(key),
+    );
+    inFlightProviders.set(key, promise);
+  }
+  return promise;
+}
 
 async function fetchFromProviders(
   resolved: ResolvedTitle,
@@ -45,7 +65,7 @@ async function fetchFromProviders(
       if (!p.isConfigured(settings)) {
         return unavailableResults(p, 'err_no_key');
       }
-      return withTimeout(PROVIDER_TIMEOUT_MS, p.fetchRatings(resolved, settings));
+      return fetchProviderOnce(p, resolved, settings);
     }),
   );
 
@@ -185,20 +205,7 @@ async function handleTitleDetected(
     // Independent of the ratings, so fetch it alongside rather than after them.
     const watchProvidersPromise = fetchWatchProviders(resolved, settings).catch(() => undefined);
 
-    const providerKey = `${resolved.mediaType}:${resolved.tmdbId}`;
-    let allResults: RatingResult[];
-    const existing = inFlightProviders.get(providerKey);
-    if (existing) {
-      allResults = await existing;
-    } else {
-      const promise = fetchFromProviders(resolved, settings);
-      inFlightProviders.set(providerKey, promise);
-      try {
-        allResults = await promise;
-      } finally {
-        inFlightProviders.delete(providerKey);
-      }
-    }
+    const allResults = await fetchFromProviders(resolved, settings);
 
     if (tabGenerations.get(tabId) !== gen) return;
 

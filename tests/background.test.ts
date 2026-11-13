@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
+import { DEFAULT_SETTINGS } from '../utils/settings';
+import type { RatingsPanelData } from '../utils/types';
 import { json, notFound, startBackground, tmdbOnly } from './helpers/background';
 
 const TAB = 1;
@@ -283,5 +285,85 @@ describe('background pipeline — context menu', () => {
 
     release();
     await vi.waitFor(() => expect(bg.badgeTexts(TAB).at(-1)).toBe('7.5'));
+  });
+});
+
+describe('background pipeline — concurrent lookups of one title', () => {
+  const movie = { id: 2, title: 'Fast', release_date: '2020-01-01' };
+  const query = { title: 'Fast', ids: {}, sourceSite: 'test' };
+  const sourcesOf = (data: RatingsPanelData | null) =>
+    data!.results.map((r) => (r.status === 'ok' ? r.rating.source : r.source));
+
+  it('fetches each provider once and filters by each caller’s settings', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tmdb = tmdbOnly([movie]);
+    const bg = await startBackground((url) =>
+      url.hostname === 'letterboxd.com' ? gate.then(() => tmdb(url)) : tmdb(url),
+    );
+
+    await bg.detect(query, 1);
+    await vi.waitFor(() =>
+      expect(bg.fetchMock.mock.calls.some(([u]) => String(u).includes('letterboxd'))).toBe(true),
+    );
+    const { settings } = await browser.storage.sync.get('settings');
+    await browser.storage.sync.set({
+      settings: {
+        ...(settings as object),
+        enabledSources: {
+          ...(settings as { enabledSources: object }).enabledSources,
+          letterboxd: false,
+        },
+      },
+    });
+    await bg.detect(query, 2);
+    // hold Letterboxd until tab 2 has resolved the title and joined the in-flight lookup
+    const searches = () =>
+      bg.fetchMock.mock.calls.filter(([u]) => String(u).includes('/3/search/')).length;
+    await vi.waitFor(() => expect(searches()).toBe(4));
+    await new Promise((r) => setTimeout(r, 20));
+    release();
+
+    await vi.waitFor(async () => {
+      expect((await bg.panel(1)).state).toBe('ready');
+      expect((await bg.panel(2)).state).toBe('ready');
+    });
+    expect(sourcesOf((await bg.panel(1)).data)).toContain('letterboxd');
+    expect(sourcesOf((await bg.panel(2)).data)).not.toContain('letterboxd');
+    // one Letterboxd lookup (slug, then slug-year), not one per tab
+    const letterboxdUrls = bg.fetchMock.mock.calls
+      .map(([u]) => String(u))
+      .filter((u) => u.includes('letterboxd'));
+    expect(letterboxdUrls.length).toBeGreaterThan(0);
+    expect(new Set(letterboxdUrls).size).toBe(letterboxdUrls.length);
+  });
+
+  it('shares a cache top-up between tabs', async () => {
+    const onlyTmdb = { ...DEFAULT_SETTINGS.enabledSources };
+    for (const k of Object.keys(onlyTmdb) as (keyof typeof onlyTmdb)[]) onlyTmdb[k] = k === 'tmdb';
+    const tmdb = tmdbOnly([movie]);
+    let bg = await startBackground(tmdb, { enabledSources: onlyTmdb });
+    await bg.detect(query, 1);
+    await vi.waitFor(async () => expect((await bg.panel(1)).state).toBe('ready'));
+
+    const withLetterboxd = {
+      enabledSources: { ...onlyTmdb, letterboxd: true },
+      tmdbApiKey: 'test-key',
+    };
+    await browser.storage.sync.set({ settings: { ...DEFAULT_SETTINGS, ...withLetterboxd } });
+    bg = await startBackground(tmdb, {}, { keepStorage: true });
+    await Promise.all([bg.detect(query, 1), bg.detect(query, 2)]);
+    await vi.waitFor(async () => {
+      expect((await bg.panel(1)).state).toBe('ready');
+      expect((await bg.panel(2)).state).toBe('ready');
+    });
+
+    const letterboxdUrls = bg.fetchMock.mock.calls
+      .map(([u]) => String(u))
+      .filter((u) => u.includes('letterboxd'));
+    expect(letterboxdUrls.length).toBeGreaterThan(0);
+    expect(new Set(letterboxdUrls).size).toBe(letterboxdUrls.length);
   });
 });
